@@ -1,28 +1,25 @@
 import React, { useState } from 'react';
-import { Recipe, RawMaterial, FixedCost, FinishedGood } from '../../types';
+import { Recipe, RawMaterial, FixedCost, SellableProduct } from '../../types';
 import CreateRecipeModal from '../CreateRecipeModal';
 import ProductionModal from '../ProductionModal';
-import ProposalModal from '../ProposalModal';
 import Card from '../common/Card';
 
 interface RecipesViewProps {
   recipes: Recipe[];
   rawMaterials: RawMaterial[];
   fixedCosts: FixedCost[];
-  finishedGoods: FinishedGood[];
+  sellableProducts: SellableProduct[];
   onSaveRecipe: (recipe: Recipe | Omit<Recipe, 'id'>) => void;
   onDeleteRecipe: (id: string) => void;
   onProductionRun: (recipeId: string, plannedQuantity: number, actualQuantity: number) => void;
 }
 
-const RecipesView: React.FC<RecipesViewProps> = ({ recipes, rawMaterials, fixedCosts, finishedGoods, onSaveRecipe, onDeleteRecipe, onProductionRun }) => {
+const RecipesView: React.FC<RecipesViewProps> = ({ recipes, rawMaterials, fixedCosts, sellableProducts, onSaveRecipe, onDeleteRecipe, onProductionRun }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProductionModalOpen, setIsProductionModalOpen] = useState(false);
-  const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
   
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
   const [producingRecipe, setProducingRecipe] = useState<Recipe | null>(null);
-  const [proposalRecipe, setProposalRecipe] = useState<Recipe | null>(null);
 
   const handleOpenModal = (recipe: Recipe | null = null) => {
     setEditingRecipe(recipe);
@@ -34,19 +31,15 @@ const RecipesView: React.FC<RecipesViewProps> = ({ recipes, rawMaterials, fixedC
     setIsProductionModalOpen(true);
   };
 
-  const handleOpenProposalModal = (recipe: Recipe) => {
-    setProposalRecipe(recipe);
-    setIsProposalModalOpen(true);
-  };
-
   const handleDelete = (id: string) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar esta receta? También se eliminará del inventario de productos terminados.')) {
+    if (window.confirm('¿Estás seguro de que quieres eliminar esta receta? También se eliminarán los productos terminados asociados del inventario.')) {
       onDeleteRecipe(id);
     }
   };
   
-  const getFinishedGoodStock = (recipeId: string) => {
-    return finishedGoods.find(fg => fg.recipeId === recipeId)?.quantityInStock || 0;
+  const getProductStock = (recipeId: string) => {
+    const product = sellableProducts.find(p => p.recipeId === recipeId);
+    return product?.quantityInStock || 0;
   }
 
   return (
@@ -80,7 +73,7 @@ const RecipesView: React.FC<RecipesViewProps> = ({ recipes, rawMaterials, fixedC
                   </div>
                 </div>
                  <div className="bg-slate-50 p-2 rounded-md mb-4">
-                  <p className="text-sm font-medium text-slate-600">Stock Terminado: <span className="font-bold text-lg text-slate-800">{getFinishedGoodStock(recipe.id).toLocaleString()} und</span></p>
+                  <p className="text-sm font-medium text-slate-600">Stock Terminado: <span className="font-bold text-lg text-slate-800">{getProductStock(recipe.id).toLocaleString()} und</span></p>
                 </div>
                 
                 <div className="space-y-2">
@@ -94,13 +87,7 @@ const RecipesView: React.FC<RecipesViewProps> = ({ recipes, rawMaterials, fixedC
                   </div>
                 </div>
               </div>
-              <div className="mt-6 grid grid-cols-2 gap-2">
-                 <button 
-                  onClick={() => handleOpenProposalModal(recipe)}
-                  className="w-full bg-slate-200 text-slate-700 font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-slate-300 transition-colors"
-                >
-                  Crear Propuesta
-                </button>
+              <div className="mt-6 flex">
                 <button 
                   onClick={() => handleOpenProductionModal(recipe)}
                   className="w-full bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-emerald-600 transition-colors"
@@ -129,15 +116,6 @@ const RecipesView: React.FC<RecipesViewProps> = ({ recipes, rawMaterials, fixedC
           recipe={producingRecipe}
           rawMaterials={rawMaterials}
           onProduce={onProductionRun}
-        />
-      )}
-
-      {proposalRecipe && (
-        <ProposalModal
-            isOpen={isProposalModalOpen}
-            onClose={() => setIsProposalModalOpen(false)}
-            recipe={proposalRecipe}
-            rawMaterials={rawMaterials}
         />
       )}
     </div>

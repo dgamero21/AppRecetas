@@ -1,7 +1,7 @@
 
 import { RawMaterial, FixedCost, Unit } from './types';
 
-export const UNITS: Unit[] = ['kg', 'g', 'l', 'ml', 'und'];
+export const UNITS: Unit[] = ['kg', 'und', 'l'];
 
 export const INITIAL_RAW_MATERIALS: RawMaterial[] = [];
 

@@ -1,15 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Recipe, FinishedGood, Customer } from '../types';
+import { SellableProduct, Customer } from '../types';
 import Modal from './common/Modal';
 
 interface AddSaleModalProps {
   isOpen: boolean;
   onClose: () => void;
-  recipes: Recipe[];
-  finishedGoods: FinishedGood[];
+  sellableProducts: SellableProduct[];
   customers: Customer[];
   onSave: (saleDetails: {
-    recipeId: string;
+    productId: string;
     quantity: number;
     customerId: string;
     deliveryMethod: 'Presencial' | 'Envío';
@@ -18,8 +17,8 @@ interface AddSaleModalProps {
   onSaveCustomer: (name: string) => Customer;
 }
 
-const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose, recipes, finishedGoods, customers, onSave, onSaveCustomer }) => {
-  const [selectedRecipeId, setSelectedRecipeId] = useState<string>('');
+const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose, sellableProducts, customers, onSave, onSaveCustomer }) => {
+  const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [quantity, setQuantity] = useState<number>(1);
   
   // Customer state
@@ -31,13 +30,12 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose, recipes, f
   const [deliveryMethod, setDeliveryMethod] = useState<'Presencial' | 'Envío'>('Presencial');
   const [shippingCost, setShippingCost] = useState<number>(0);
 
-  const availableToSell = finishedGoods.filter(fg => fg.quantityInStock > 0);
-  const selectedRecipe = recipes.find(r => r.id === selectedRecipeId);
-  const selectedGood = finishedGoods.find(fg => fg.recipeId === selectedRecipeId);
-  const maxQuantity = selectedGood ? selectedGood.quantityInStock : 1;
+  const availableToSell = sellableProducts.filter(p => p.quantityInStock > 0);
+  const selectedProduct = sellableProducts.find(p => p.id === selectedProductId);
+  const maxQuantity = selectedProduct ? selectedProduct.quantityInStock : 1;
 
   const resetForm = () => {
-    setSelectedRecipeId('');
+    setSelectedProductId('');
     setQuantity(1);
     setCustomerSearch('');
     setSelectedCustomerId(null);
@@ -69,14 +67,14 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose, recipes, f
     handleSelectCustomer(newCustomer);
   };
   
-  const subtotal = (selectedRecipe?.pvp || 0) * quantity;
+  const subtotal = (selectedProduct?.pvp || 0) * quantity;
   const total = subtotal + shippingCost;
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedRecipeId && quantity > 0 && selectedCustomerId) {
+    if (selectedProductId && quantity > 0 && selectedCustomerId) {
       onSave({
-        recipeId: selectedRecipeId,
+        productId: selectedProductId,
         quantity,
         customerId: selectedCustomerId,
         deliveryMethod,
@@ -84,7 +82,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose, recipes, f
       });
       onClose();
     } else {
-        alert("Por favor, complete todos los campos requeridos: receta, cantidad y cliente.")
+        alert("Por favor, complete todos los campos requeridos: producto, cantidad y cliente.")
     }
   };
 
@@ -94,21 +92,18 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose, recipes, f
             {/* Venta y Cantidad */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Receta Vendida</label>
-                <select value={selectedRecipeId} onChange={e => setSelectedRecipeId(e.target.value)} className="w-full p-2 bg-white border rounded" required>
-                  <option value="">Seleccione una receta</option>
-                  {availableToSell.map(fg => {
-                    const recipe = recipes.find(r => r.id === fg.recipeId);
-                    return recipe ? (
-                      <option key={recipe.id} value={recipe.id}>{recipe.name} - (Stock: {fg.quantityInStock})</option>
-                    ) : null;
-                  })}
+                <label className="block text-sm font-medium text-slate-700 mb-1">Producto Vendido</label>
+                <select value={selectedProductId} onChange={e => setSelectedProductId(e.target.value)} className="w-full p-2 bg-white border rounded" required>
+                  <option value="">Seleccione un producto</option>
+                  {availableToSell.map(p => (
+                    <option key={p.id} value={p.id}>{p.name} - (Stock: {p.quantityInStock})</option>
+                  ))}
                 </select>
               </div>
               <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Cantidad Vendida</label>
-                  <input type="number" value={quantity} onChange={e => setQuantity(parseInt(e.target.value) || 1)} className="w-full p-2 bg-white border rounded" min="1" max={maxQuantity} required disabled={!selectedRecipeId} />
-                   {selectedGood && <p className="text-xs text-slate-500 mt-1">Stock disponible: {selectedGood.quantityInStock}</p>}
+                  <input type="number" value={quantity} onChange={e => setQuantity(parseInt(e.target.value) || 1)} className="w-full p-2 bg-white border rounded" min="1" max={maxQuantity} required disabled={!selectedProductId} />
+                   {selectedProduct && <p className="text-xs text-slate-500 mt-1">Stock disponible: {selectedProduct.quantityInStock}</p>}
               </div>
             </div>
 

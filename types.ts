@@ -1,4 +1,4 @@
-export type Unit = 'kg' | 'g' | 'l' | 'ml' | 'und';
+export type Unit = 'kg' | 'und' | 'l';
 
 export interface RawMaterial {
   id: string;
@@ -22,26 +22,56 @@ export interface Ingredient {
 }
 
 export interface Recipe {
-  id: string;
+  id:string;
   name: string;
   ingredients: Ingredient[];
+  productionYield: number; // How many units this recipe produces
   cost: number; // Production cost per unit
   pvp: number; // Price per unit
 }
 
-export interface FinishedGood {
-  recipeId: string;
+export type ProductType = 'SINGLE' | 'PACKAGE' | 'TRANSFORMED';
+
+export interface SellableProduct {
+  id: string;
+  name: string;
+  type: ProductType;
   quantityInStock: number;
+  cost: number; // Cost per unit
+  pvp: number; // Price per unit
+  
+  // Link to original recipe if it's a direct production
+  recipeId?: string; 
+
+  // For packages
+  sourceProductId?: string;
+  packSize?: number;
+
+  // For transformations (uses sourceProductId)
+  transformationNote?: string;
 }
 
+export type WastedItemType = 'RAW_MATERIAL' | 'PRODUCT';
+
+export interface WasteRecord {
+  id: string;
+  itemId: string;
+  itemName: string; 
+  itemType: WastedItemType;
+  quantity: number;
+  unit?: Unit | 'und'; 
+  date: string;
+}
+
+
 export interface Customer {
-    id: string;
+    id:string;
     name: string;
 }
 
 export interface Sale {
     id: string;
-    recipeId: string;
+    productId: string;
     customerId: string;
     quantity: number;
     salePricePerUnit: number;
@@ -54,4 +84,4 @@ export interface Sale {
     date: string;
 }
 
-export type View = 'dashboard' | 'recipes' | 'rawMaterials' | 'fixedCosts' | 'sales';
+export type View = 'dashboard' | 'recipes' | 'rawMaterials' | 'fixedCosts' | 'sales' | 'pantry' | 'waste';

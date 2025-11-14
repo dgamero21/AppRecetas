@@ -28,7 +28,7 @@ const AddFixedCostModal: React.FC<AddFixedCostModalProps> = ({ isOpen, onClose, 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const costValue = parseFloat(monthlyCost);
-        if (name && costValue > 0) {
+        if (name && !isNaN(costValue) && costValue > 0) {
             if (isEditing) {
                 onSave({ id: costToEdit.id, name, monthlyCost: costValue });
             } else {
@@ -51,7 +51,7 @@ const AddFixedCostModal: React.FC<AddFixedCostModalProps> = ({ isOpen, onClose, 
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Costo Mensual ($)</label>
-                    <input type="number" name="monthlyCost" value={monthlyCost} onChange={e => setMonthlyCost(e.target.value)} placeholder="Ej: 1200" className="w-full p-2 bg-white border rounded" required min="0.01" step="0.01"/>
+                    <input type="number" name="monthlyCost" value={monthlyCost} onChange={e => setMonthlyCost(e.target.value)} placeholder="Ej: 1200" className="w-full p-2 bg-white border rounded" required step="any"/>
                 </div>
                 <div className="pt-4 flex justify-end gap-4">
                     <button type="button" onClick={onClose} className="bg-slate-200 text-slate-800 px-6 py-2 rounded-lg hover:bg-slate-300">Cancelar</button>

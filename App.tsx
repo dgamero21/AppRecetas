@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RawMaterial, FixedCost, Recipe, View, Sale, FinishedGood, Customer } from './types';
+import { RawMaterial, FixedCost, Recipe, View, Sale, SellableProduct, Customer, WasteRecord, WastedItemType, ProductType, Unit } from './types';
 import { INITIAL_RAW_MATERIALS, INITIAL_FIXED_COSTS } from './constants';
 import Header from './components/Header';
 import Nav from './components/Nav';
@@ -8,6 +8,7 @@ import FixedCostsView from './components/views/FixedCostsView';
 import RecipesView from './components/views/RecipesView';
 import DashboardView from './components/views/DashboardView';
 import SalesView from './components/views/SalesView';
+import PantryView from './components/views/PantryView';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -15,8 +16,19 @@ const App: React.FC = () => {
   const [fixedCosts, setFixedCosts] = useState<FixedCost[]>(INITIAL_FIXED_COSTS);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
-  const [finishedGoods, setFinishedGoods] = useState<FinishedGood[]>([]);
+  const [sellableProducts, setSellableProducts] = useState<SellableProduct[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [suppliers, setSuppliers] = useState<string[]>(['Proveedor General']);
+  const [wasteRecords, setWasteRecords] = useState<WasteRecord[]>([]);
+
+  // Supplier Management
+  const handleSaveSupplier = (supplierName: string): string => {
+    const trimmedName = supplierName.trim();
+    if (trimmedName && !suppliers.find(s => s.toLowerCase() === trimmedName.toLowerCase())) {
+      setSuppliers(prev => [...prev, trimmedName].sort());
+    }
+    return trimmedName;
+  };
 
   // Customer Management
   const handleSaveCustomer = (customerName: string): Customer => {
@@ -31,12 +43,29 @@ const App: React.FC = () => {
 
   // Raw Materials CRUD
   const handleSaveRawMaterial = (material: RawMaterial) => {
+    handleSaveSupplier(material.supplier);
     const existing = rawMaterials.find(m => m.id === material.id);
     if (existing) {
       setRawMaterials(prev => prev.map(m => m.id === material.id ? material : m));
     } else {
       setRawMaterials(prev => [...prev, { ...material, id: Date.now().toString() }]);
     }
+  };
+  
+  const handlePurchaseRawMaterial = (details: { materialId: string; quantity: number; totalCost: number; supplier: string; }) => {
+    const { materialId, quantity, totalCost, supplier } = details;
+    handleSaveSupplier(supplier);
+    
+    setRawMaterials(prev => prev.map(m => {
+        if (m.id === materialId) {
+            const currentValuation = m.stock * m.purchasePrice;
+            const newStock = m.stock + quantity;
+            const newTotalValue = currentValuation + totalCost;
+            const newAvgPrice = newStock > 0 ? newTotalValue / newStock : 0;
+            return { ...m, stock: newStock, purchasePrice: newAvgPrice, supplier };
+        }
+        return m;
+    }));
   };
 
   const handleDeleteRawMaterial = (materialId: string) => {
@@ -68,69 +97,154 @@ const App: React.FC = () => {
   
   const handleDeleteRecipe = (recipeId: string) => {
     setRecipes(prev => prev.filter(r => r.id !== recipeId));
-    setFinishedGoods(prev => prev.filter(fg => fg.recipeId !== recipeId));
+    setSellableProducts(prev => prev.filter(p => p.recipeId !== recipeId));
   };
 
-  // Production Logic
+  // Production, Pantry, and Waste Logic
   const handleProductionRun = (recipeId: string, plannedQuantity: number, actualQuantity: number) => {
     const recipe = recipes.find(r => r.id === recipeId);
     if (!recipe) return;
 
-    const updatedRawMaterials = [...rawMaterials];
-    
-    // Deduct stock
-    recipe.ingredients.forEach(ingredient => {
-      const materialIndex = updatedRawMaterials.findIndex(m => m.id === ingredient.rawMaterialId);
-      if (materialIndex > -1) {
-        const requiredStock = ingredient.quantity * plannedQuantity;
-        updatedRawMaterials[materialIndex].stock -= requiredStock;
-      }
+    setRawMaterials(prev => {
+        const updated = [...prev];
+        recipe.ingredients.forEach(ingredient => {
+            const materialIndex = updated.findIndex(m => m.id === ingredient.rawMaterialId);
+            if (materialIndex > -1) {
+                const requiredStock = (ingredient.quantity / recipe.productionYield) * plannedQuantity;
+                updated[materialIndex].stock -= requiredStock;
+            }
+        });
+        return updated;
     });
-    setRawMaterials(updatedRawMaterials);
 
-    // Add to finished goods
-    setFinishedGoods(prev => {
-        const existingGoodIndex = prev.findIndex(fg => fg.recipeId === recipeId);
-        if (existingGoodIndex > -1) {
-            const newGoods = [...prev];
-            newGoods[existingGoodIndex].quantityInStock += actualQuantity;
-            return newGoods;
+    setSellableProducts(prev => {
+        const existingProductIndex = prev.findIndex(p => p.recipeId === recipeId);
+        if (existingProductIndex > -1) {
+            const updated = [...prev];
+            updated[existingProductIndex].quantityInStock += actualQuantity;
+            return updated;
         } else {
-            return [...prev, { recipeId, quantityInStock: actualQuantity }];
+            const newProduct: SellableProduct = {
+                id: Date.now().toString(),
+                name: recipe.name,
+                type: 'SINGLE',
+                quantityInStock: actualQuantity,
+                cost: recipe.cost,
+                pvp: recipe.pvp,
+                recipeId: recipe.id,
+            };
+            return [...prev, newProduct];
         }
     });
   };
 
+  const handlePackageProduct = (sourceProductId: string, packSize: number, newPackageName: string, newPackagePVP: number) => {
+    const sourceProduct = sellableProducts.find(p => p.id === sourceProductId);
+    if (!sourceProduct || sourceProduct.quantityInStock < packSize) {
+        alert("No hay suficiente stock para crear este paquete.");
+        return;
+    }
+
+    setSellableProducts(prev => {
+        const updated = prev.map(p => p.id === sourceProductId ? { ...p, quantityInStock: p.quantityInStock - packSize } : p);
+        const newPackage: SellableProduct = {
+            id: Date.now().toString(),
+            name: newPackageName,
+            type: 'PACKAGE',
+            quantityInStock: 1,
+            cost: sourceProduct.cost * packSize,
+            pvp: newPackagePVP,
+            sourceProductId: sourceProductId,
+            packSize: packSize
+        };
+        return [...updated, newPackage];
+    });
+  };
+  
+  const handleTransformProduct = (sourceProductId: string, quantityToTransform: number, newProductName: string, newProductYield: number, newProductPVP: number) => {
+    const sourceProduct = sellableProducts.find(p => p.id === sourceProductId);
+    if (!sourceProduct || sourceProduct.quantityInStock < quantityToTransform) {
+        alert("No hay suficiente stock para transformar.");
+        return;
+    }
+
+    setSellableProducts(prev => {
+        const updated = prev.map(p => p.id === sourceProductId ? { ...p, quantityInStock: p.quantityInStock - quantityToTransform } : p);
+        const newProduct: SellableProduct = {
+            id: Date.now().toString(),
+            name: newProductName,
+            type: 'TRANSFORMED',
+            quantityInStock: newProductYield,
+            cost: (sourceProduct.cost * quantityToTransform) / newProductYield,
+            pvp: newProductPVP,
+            sourceProductId: sourceProductId,
+            transformationNote: `${quantityToTransform} de '${sourceProduct.name}'`
+        };
+        return [...updated, newProduct];
+    });
+  };
+
+  const handleWasteItem = (itemId: string, itemType: WastedItemType, quantity: number, unit: Unit | 'und') => {
+      let itemName = '';
+      if(itemType === 'RAW_MATERIAL') {
+          const material = rawMaterials.find(m => m.id === itemId);
+          if(!material || material.stock < quantity) {
+            alert("Stock insuficiente para registrar la merma.");
+            return;
+          }
+          itemName = material.name;
+          setRawMaterials(prev => prev.map(m => m.id === itemId ? {...m, stock: m.stock - quantity} : m));
+      } else {
+          const product = sellableProducts.find(p => p.id === itemId);
+          if(!product || product.quantityInStock < quantity) {
+            alert("Stock insuficiente para registrar la merma.");
+            return;
+          }
+          itemName = product.name;
+          setSellableProducts(prev => prev.map(p => p.id === itemId ? {...p, quantityInStock: p.quantityInStock - quantity} : p));
+      }
+
+      const newWasteRecord: WasteRecord = {
+          id: Date.now().toString(),
+          itemId,
+          itemName,
+          itemType,
+          quantity,
+          unit,
+          date: new Date().toISOString(),
+      };
+      setWasteRecords(prev => [newWasteRecord, ...prev]);
+  };
+
   // Sales Logic
   const handleAddSale = (saleDetails: {
-    recipeId: string;
+    productId: string;
     quantity: number;
     customerId: string;
     deliveryMethod: 'Presencial' | 'Envío';
     shippingCost: number;
   }) => {
-    const { recipeId, quantity, customerId, deliveryMethod, shippingCost } = saleDetails;
-    const recipe = recipes.find(r => r.id === recipeId);
-    const finishedGood = finishedGoods.find(fg => fg.recipeId === recipeId);
+    const { productId, quantity, customerId, deliveryMethod, shippingCost } = saleDetails;
+    const product = sellableProducts.find(p => p.id === productId);
 
-    if (!recipe || !finishedGood || finishedGood.quantityInStock < quantity) {
-      alert("No hay suficiente stock del producto terminado para realizar esta venta.");
+    if (!product || product.quantityInStock < quantity) {
+      alert("No hay suficiente stock para realizar esta venta.");
       return;
     }
 
-    setFinishedGoods(prev => prev.map(fg => 
-        fg.recipeId === recipeId ? { ...fg, quantityInStock: fg.quantityInStock - quantity } : fg
+    setSellableProducts(prev => prev.map(p => 
+        p.id === productId ? { ...p, quantityInStock: p.quantityInStock - quantity } : p
     ));
     
-    const totalSale = recipe.pvp * quantity;
-    const totalCost = recipe.cost * quantity;
+    const totalSale = product.pvp * quantity;
+    const totalCost = product.cost * quantity;
     
     const newSale: Sale = {
       id: Date.now().toString(),
-      recipeId,
+      productId,
       customerId,
       quantity,
-      salePricePerUnit: recipe.pvp,
+      salePricePerUnit: product.pvp,
       totalSale,
       totalCost,
       profit: totalSale - totalCost,
@@ -147,14 +261,14 @@ const App: React.FC = () => {
     const saleToDelete = sales.find(s => s.id === saleId);
     if (!saleToDelete) return;
     
-    setFinishedGoods(prev => {
-      const goodIndex = prev.findIndex(fg => fg.recipeId === saleToDelete.recipeId);
-      if (goodIndex > -1) {
-        const newGoods = [...prev];
-        newGoods[goodIndex].quantityInStock += saleToDelete.quantity;
-        return newGoods;
+    setSellableProducts(prev => {
+      const productIndex = prev.findIndex(p => p.id === saleToDelete.productId);
+      if (productIndex > -1) {
+        const updated = [...prev];
+        updated[productIndex].quantityInStock += saleToDelete.quantity;
+        return updated;
       }
-      return [...prev, { recipeId: saleToDelete.recipeId, quantityInStock: saleToDelete.quantity }];
+      return prev;
     });
     
     setSales(prev => prev.filter(s => s.id !== saleId));
@@ -163,12 +277,16 @@ const App: React.FC = () => {
   const renderView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <DashboardView rawMaterials={rawMaterials} fixedCosts={fixedCosts} sales={sales} />;
+        return <DashboardView rawMaterials={rawMaterials} fixedCosts={fixedCosts} sales={sales} sellableProducts={sellableProducts} />;
       case 'rawMaterials':
         return <RawMaterialsView 
                   rawMaterials={rawMaterials} 
+                  suppliers={suppliers}
                   onSaveRawMaterial={handleSaveRawMaterial}
                   onDeleteRawMaterial={handleDeleteRawMaterial}
+                  onPurchaseRawMaterial={handlePurchaseRawMaterial}
+                  onSaveSupplier={handleSaveSupplier}
+                  onWasteItem={handleWasteItem}
                />;
       case 'fixedCosts':
         return <FixedCostsView 
@@ -179,12 +297,20 @@ const App: React.FC = () => {
       case 'sales':
         return <SalesView 
                   recipes={recipes}
-                  finishedGoods={finishedGoods}
+                  rawMaterials={rawMaterials}
+                  sellableProducts={sellableProducts}
                   sales={sales} 
                   customers={customers}
                   onAddSale={handleAddSale} 
                   onDeleteSale={handleDeleteSale}
                   onSaveCustomer={handleSaveCustomer}
+               />;
+      case 'pantry':
+        return <PantryView
+                  products={sellableProducts}
+                  onPackage={handlePackageProduct}
+                  onTransform={handleTransformProduct}
+                  onWaste={handleWasteItem}
                />;
       case 'recipes':
       default:
@@ -192,7 +318,7 @@ const App: React.FC = () => {
                   recipes={recipes} 
                   rawMaterials={rawMaterials} 
                   fixedCosts={fixedCosts} 
-                  finishedGoods={finishedGoods}
+                  sellableProducts={sellableProducts}
                   onSaveRecipe={handleSaveRecipe}
                   onDeleteRecipe={handleDeleteRecipe}
                   onProductionRun={handleProductionRun}

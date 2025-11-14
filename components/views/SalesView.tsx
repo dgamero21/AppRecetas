@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { Recipe, Sale, FinishedGood, Customer } from '../../types';
+import { Recipe, Sale, SellableProduct, Customer, RawMaterial } from '../../types';
 import Card from '../common/Card';
 import AddSaleModal from '../AddSaleModal';
+import ProposalModal from '../ProposalModal';
 
 interface SalesViewProps {
   recipes: Recipe[];
-  finishedGoods: FinishedGood[];
+  rawMaterials: RawMaterial[];
+  sellableProducts: SellableProduct[];
   sales: Sale[];
   customers: Customer[];
   onAddSale: (saleDetails: {
-    recipeId: string;
+    productId: string;
     quantity: number;
     customerId: string;
     deliveryMethod: 'Presencial' | 'Envío';
@@ -19,9 +21,11 @@ interface SalesViewProps {
   onSaveCustomer: (name: string) => Customer;
 }
 
-const SalesView: React.FC<SalesViewProps> = ({ recipes, finishedGoods, sales, customers, onAddSale, onDeleteSale, onSaveCustomer }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const availableToSell = finishedGoods.filter(fg => fg.quantityInStock > 0);
+const SalesView: React.FC<SalesViewProps> = ({ recipes, rawMaterials, sellableProducts, sales, customers, onAddSale, onDeleteSale, onSaveCustomer }) => {
+  const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
+  const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
+
+  const availableToSell = sellableProducts.filter(p => p.quantityInStock > 0);
 
   const handleDelete = (id: string) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar esta venta? Esto restaurará el stock del producto terminado.')) {
@@ -32,15 +36,23 @@ const SalesView: React.FC<SalesViewProps> = ({ recipes, finishedGoods, sales, cu
   return (
     <div>
         <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">Historial de Ventas</h2>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              disabled={availableToSell.length === 0}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition-colors flex items-center gap-2 disabled:bg-slate-400 disabled:cursor-not-allowed"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" /></svg>
-              Registrar Venta
-            </button>
+            <h2 className="text-2xl font-bold">Ventas y Propuestas</h2>
+            <div className="flex gap-2">
+                <button
+                onClick={() => setIsProposalModalOpen(true)}
+                className="bg-slate-500 text-white px-4 py-2 rounded-lg shadow hover:bg-slate-600 transition-colors flex items-center gap-2"
+                >
+                Crear Propuesta
+                </button>
+                <button
+                onClick={() => setIsSaleModalOpen(true)}
+                disabled={availableToSell.length === 0}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition-colors flex items-center gap-2 disabled:bg-slate-400 disabled:cursor-not-allowed"
+                >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" /></svg>
+                Registrar Venta
+                </button>
+            </div>
         </div>
 
         <Card>
@@ -55,7 +67,7 @@ const SalesView: React.FC<SalesViewProps> = ({ recipes, finishedGoods, sales, cu
                 <thead className="bg-slate-50">
                   <tr>
                     <th className="p-3">Fecha</th>
-                    <th className="p-3">Receta</th>
+                    <th className="p-3">Producto</th>
                     <th className="p-3">Cliente</th>
                     <th className="p-3 text-right">Cant.</th>
                     <th className="p-3 text-right">Venta Prod.</th>
@@ -67,12 +79,12 @@ const SalesView: React.FC<SalesViewProps> = ({ recipes, finishedGoods, sales, cu
                 </thead>
                 <tbody>
                   {sales.map(s => {
-                      const recipe = recipes.find(r => r.id === s.recipeId);
+                      const product = sellableProducts.find(p => p.id === s.productId);
                       const customer = customers.find(c => c.id === s.customerId);
                       return (
                           <tr key={s.id} className="border-b">
                               <td className="p-3 text-slate-500">{new Date(s.date).toLocaleDateString()}</td>
-                              <td className="p-3 font-medium text-slate-900">{recipe?.name || 'Receta eliminada'}</td>
+                              <td className="p-3 font-medium text-slate-900">{product?.name || 'Producto eliminado'}</td>
                               <td className="p-3 text-slate-700">{customer?.name || 'Cliente no encontrado'}</td>
                               <td className="p-3 text-slate-700 text-right">{s.quantity}</td>
                               <td className="p-3 text-slate-700 text-right">${s.totalSale.toFixed(2)}</td>
@@ -92,13 +104,18 @@ const SalesView: React.FC<SalesViewProps> = ({ recipes, finishedGoods, sales, cu
         </Card>
 
         <AddSaleModal 
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
+            isOpen={isSaleModalOpen}
+            onClose={() => setIsSaleModalOpen(false)}
             onSave={onAddSale}
-            recipes={recipes}
-            finishedGoods={finishedGoods}
+            sellableProducts={sellableProducts}
             customers={customers}
             onSaveCustomer={onSaveCustomer}
+        />
+        <ProposalModal
+            isOpen={isProposalModalOpen}
+            onClose={() => setIsProposalModalOpen(false)}
+            recipes={recipes}
+            rawMaterials={rawMaterials}
         />
     </div>
   );

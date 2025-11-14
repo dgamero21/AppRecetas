@@ -1,21 +1,192 @@
-import React, { useState } from 'react';
-import { RawMaterial } from '../../types';
+import React, { useState, useMemo, useEffect } from 'react';
+import { RawMaterial, WastedItemType, Unit } from '../../types';
 import Card from '../common/Card';
+import Modal from '../common/Modal';
 import AddRawMaterialModal from '../AddRawMaterialModal';
+
+interface WasteModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  item: { id: string; name: string; stock: number; unit: Unit | 'und' } | null;
+  onSave: (itemId: string, quantity: number, unit: Unit | 'und') => void;
+}
+
+const WasteModal: React.FC<WasteModalProps> = ({ isOpen, onClose, item, onSave }) => {
+    const [quantity, setQuantity] = useState('');
+
+    useEffect(() => {
+        if (isOpen) {
+            setQuantity('');
+        }
+    }, [isOpen]);
+    
+    if (!item) return null;
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const quantityNum = parseFloat(quantity);
+        if (quantityNum > 0 && quantityNum <= item.stock) {
+            onSave(item.id, quantityNum, item.unit);
+            onClose();
+        } else {
+            alert(`Por favor, ingrese una cantidad válida (mayor que 0 y menor o igual al stock de ${item.stock})`);
+        }
+    };
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title={`Registrar Merma: ${item.name}`}>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Cantidad a Mermar ({item.unit})</label>
+                    <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)} placeholder="0" className="w-full p-2 bg-white border rounded" step="any" required max={item.stock} />
+                    <p className="text-xs text-slate-500 mt-1">Stock disponible: {item.stock} {item.unit}</p>
+                </div>
+                <div className="pt-4 flex justify-end gap-4">
+                    <button type="button" onClick={onClose} className="bg-slate-200 text-slate-800 px-6 py-2 rounded-lg hover:bg-slate-300">Cancelar</button>
+                    <button type="submit" className="bg-rose-600 text-white px-6 py-2 rounded-lg shadow hover:bg-rose-700">Confirmar Merma</button>
+                </div>
+            </form>
+        </Modal>
+    );
+};
+
+
+interface PurchaseModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  material: RawMaterial | null;
+  suppliers: string[];
+  onSave: (details: { materialId: string; quantity: number; totalCost: number; supplier: string; }) => void;
+  onSaveSupplier: (name: string) => string;
+}
+
+const PurchaseModal: React.FC<PurchaseModalProps> = ({ isOpen, onClose, material, suppliers, onSave, onSaveSupplier }) => {
+  const [quantity, setQuantity] = useState('');
+  const [totalCost, setTotalCost] = useState('');
+  const [supplierSearch, setSupplierSearch] = useState('');
+  const [isSupplierDropdownOpen, setIsSupplierDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    if (material) {
+        setSupplierSearch(material.supplier || '');
+    }
+  }, [material]);
+
+  const resetForm = () => {
+    setQuantity('');
+    setTotalCost('');
+    setSupplierSearch('');
+  };
+
+  const filteredSuppliers = useMemo(() => {
+    if (!supplierSearch) return [];
+    return suppliers.filter(s => s.toLowerCase().includes(supplierSearch.toLowerCase()));
+  }, [supplierSearch, suppliers]);
+
+  const canAddNewSupplier = supplierSearch && !suppliers.some(s => s.toLowerCase() === supplierSearch.toLowerCase());
+
+  const handleSelectSupplier = (supplierName: string) => {
+    setSupplierSearch(supplierName);
+    setIsSupplierDropdownOpen(false);
+  };
+  
+  const handleAddNewSupplier = () => {
+    const newSupplier = onSaveSupplier(supplierSearch);
+    handleSelectSupplier(newSupplier);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const quantityNum = parseFloat(quantity);
+    const totalCostNum = parseFloat(totalCost);
+
+    if (material && quantityNum > 0 && totalCostNum >= 0 && supplierSearch) {
+      onSave({
+        materialId: material.id,
+        quantity: quantityNum,
+        totalCost: totalCostNum,
+        supplier: supplierSearch,
+      });
+      resetForm();
+      onClose();
+    } else {
+      alert('Por favor, complete todos los campos con valores válidos.');
+    }
+  };
+
+  if (!material) return null;
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={`Comprar: ${material.name}`}>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Cantidad Comprada ({material.unit})</label>
+            <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)} placeholder="5" className="w-full p-2 bg-white border rounded" step="any" required />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Costo Total de la Compra ($)</label>
+            <input type="number" value={totalCost} onChange={e => setTotalCost(e.target.value)} placeholder="5000" className="w-full p-2 bg-white border rounded" step="any" required />
+          </div>
+        </div>
+        <div className="relative">
+          <label className="block text-sm font-medium text-slate-700 mb-1">Proveedor</label>
+          <input type="text" value={supplierSearch} onChange={e => {setSupplierSearch(e.target.value); setIsSupplierDropdownOpen(true);}} placeholder="Buscar o añadir proveedor" className="w-full p-2 bg-white border rounded" required />
+          {isSupplierDropdownOpen && supplierSearch.length > 0 && (
+            <div className="absolute z-10 w-full bg-white border rounded-b-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
+              {filteredSuppliers.map(supplier => (
+                <div key={supplier} onClick={() => handleSelectSupplier(supplier)} className="p-2 hover:bg-indigo-100 cursor-pointer">{supplier}</div>
+              ))}
+              {canAddNewSupplier && (
+                <div onClick={handleAddNewSupplier} className="p-2 text-indigo-600 font-bold hover:bg-indigo-100 cursor-pointer">
+                  + Añadir nuevo proveedor: "{supplierSearch}"
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="pt-4 flex justify-end gap-4">
+          <button type="button" onClick={onClose} className="bg-slate-200 text-slate-800 px-6 py-2 rounded-lg hover:bg-slate-300">Cancelar</button>
+          <button type="submit" className="bg-indigo-600 text-white px-6 py-2 rounded-lg shadow hover:bg-indigo-700">Registrar Compra</button>
+        </div>
+      </form>
+    </Modal>
+  );
+};
+
 
 interface RawMaterialsViewProps {
   rawMaterials: RawMaterial[];
+  suppliers: string[];
   onSaveRawMaterial: (material: RawMaterial) => void;
   onDeleteRawMaterial: (id: string) => void;
+  onPurchaseRawMaterial: (details: { materialId: string; quantity: number; totalCost: number; supplier: string; }) => void;
+  onSaveSupplier: (name: string) => string;
+  onWasteItem: (itemId: string, itemType: WastedItemType, quantity: number, unit: Unit | 'und') => void;
 }
 
-const RawMaterialsView: React.FC<RawMaterialsViewProps> = ({ rawMaterials, onSaveRawMaterial, onDeleteRawMaterial }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingMaterial, setEditingMaterial] = useState<RawMaterial | null>(null);
+const RawMaterialsView: React.FC<RawMaterialsViewProps> = ({ rawMaterials, suppliers, onSaveRawMaterial, onDeleteRawMaterial, onPurchaseRawMaterial, onSaveSupplier, onWasteItem }) => {
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+  const [isWasteModalOpen, setIsWasteModalOpen] = useState(false);
 
-  const handleOpenModal = (material: RawMaterial | null = null) => {
+  const [editingMaterial, setEditingMaterial] = useState<RawMaterial | null>(null);
+  const [purchasingMaterial, setPurchasingMaterial] = useState<RawMaterial | null>(null);
+  const [wastingMaterial, setWastingMaterial] = useState<RawMaterial | null>(null);
+
+  const handleOpenAddModal = (material: RawMaterial | null = null) => {
     setEditingMaterial(material);
-    setIsModalOpen(true);
+    setIsAddModalOpen(true);
+  };
+  
+  const handleOpenPurchaseModal = (material: RawMaterial) => {
+    setPurchasingMaterial(material);
+    setIsPurchaseModalOpen(true);
+  };
+  
+  const handleOpenWasteModal = (material: RawMaterial) => {
+    setWastingMaterial(material);
+    setIsWasteModalOpen(true);
   };
 
   const handleDelete = (id: string) => {
@@ -29,7 +200,7 @@ const RawMaterialsView: React.FC<RawMaterialsViewProps> = ({ rawMaterials, onSav
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Inventario de Materias Primas</h2>
         <button
-          onClick={() => handleOpenModal()}
+          onClick={() => handleOpenAddModal()}
           className="bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition-colors flex items-center gap-2"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" /></svg>
@@ -50,7 +221,7 @@ const RawMaterialsView: React.FC<RawMaterialsViewProps> = ({ rawMaterials, onSav
                 <tr>
                   <th className="p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Nombre</th>
                   <th className="p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Stock</th>
-                  <th className="p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Precio</th>
+                  <th className="p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Precio Prom.</th>
                   <th className="p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Valorado</th>
                   <th className="p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Acciones</th>
                 </tr>
@@ -64,8 +235,10 @@ const RawMaterialsView: React.FC<RawMaterialsViewProps> = ({ rawMaterials, onSav
                     <td className={`p-3 font-semibold text-right ${m.stock < m.minStock ? 'font-bold text-red-900' : 'text-slate-700'}`}>${(m.stock * m.purchasePrice).toFixed(2)}</td>
                     <td className="p-3 text-center">
                       <div className="flex justify-center items-center gap-2">
-                        <button onClick={() => handleOpenModal(m)} className="text-slate-500 hover:text-indigo-600"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" /></svg></button>
-                        <button onClick={() => handleDelete(m.id)} className="text-slate-500 hover:text-red-600"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg></button>
+                        <button onClick={() => handleOpenPurchaseModal(m)} className="text-slate-500 hover:text-emerald-600" title="Comprar más"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" /></svg></button>
+                        <button onClick={() => handleOpenWasteModal(m)} className="text-slate-500 hover:text-rose-600" title="Merma"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg></button>
+                        <button onClick={() => handleOpenAddModal(m)} className="text-slate-500 hover:text-indigo-600" title="Editar"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" /></svg></button>
+                        <button onClick={() => handleDelete(m.id)} className="text-slate-500 hover:text-red-600" title="Eliminar"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg></button>
                       </div>
                     </td>
                   </tr>
@@ -77,11 +250,30 @@ const RawMaterialsView: React.FC<RawMaterialsViewProps> = ({ rawMaterials, onSav
       </Card>
       
       <AddRawMaterialModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
         onSave={onSaveRawMaterial}
         materialToEdit={editingMaterial}
+        suppliers={suppliers}
+        onSaveSupplier={onSaveSupplier}
       />
+
+      <PurchaseModal
+        isOpen={isPurchaseModalOpen}
+        onClose={() => setIsPurchaseModalOpen(false)}
+        material={purchasingMaterial}
+        suppliers={suppliers}
+        onSave={onPurchaseRawMaterial}
+        onSaveSupplier={onSaveSupplier}
+      />
+
+      <WasteModal
+        isOpen={isWasteModalOpen}
+        onClose={() => setIsWasteModalOpen(false)}
+        item={wastingMaterial}
+        onSave={(itemId, quantity, unit) => onWasteItem(itemId, 'RAW_MATERIAL', quantity, unit)}
+      />
+
     </div>
   );
 };
