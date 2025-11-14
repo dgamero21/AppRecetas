@@ -9,10 +9,9 @@ interface AddRawMaterialModalProps {
   onSave: (material: RawMaterial) => void;
   materialToEdit: RawMaterial | null;
   suppliers: string[];
-  onSaveSupplier: (name: string) => string;
 }
 
-const AddRawMaterialModal: React.FC<AddRawMaterialModalProps> = ({ isOpen, onClose, onSave, materialToEdit, suppliers, onSaveSupplier }) => {
+const AddRawMaterialModal: React.FC<AddRawMaterialModalProps> = ({ isOpen, onClose, onSave, materialToEdit, suppliers }) => {
   const [name, setName] = useState('');
   const [totalCost, setTotalCost] = useState('');
   const [quantity, setQuantity] = useState('');
@@ -64,11 +63,6 @@ const AddRawMaterialModal: React.FC<AddRawMaterialModalProps> = ({ isOpen, onClo
     setIsSupplierDropdownOpen(false);
   };
   
-  const handleAddNewSupplier = () => {
-    const newSupplier = onSaveSupplier(supplierSearch);
-    handleSelectSupplier(newSupplier);
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -79,7 +73,7 @@ const AddRawMaterialModal: React.FC<AddRawMaterialModalProps> = ({ isOpen, onClo
           ...materialToEdit,
           name,
           minStock: minStockNum,
-          supplier: supplierSearch,
+          supplier: supplierSearch.trim(),
           unit,
         });
       } else {
@@ -90,14 +84,21 @@ const AddRawMaterialModal: React.FC<AddRawMaterialModalProps> = ({ isOpen, onClo
       const quantityNum = parseFloat(quantity);
       const totalCostNum = parseFloat(totalCost);
       if (name && quantityNum > 0 && totalCostNum >= 0 && supplierSearch) {
+        const pricePerUnit = totalCostNum / quantityNum;
         onSave({
           id: '', // App.tsx will assign the ID
           name,
-          purchasePrice: totalCostNum / quantityNum,
+          purchasePrice: pricePerUnit,
           stock: quantityNum,
           minStock: parseFloat(minStock) || 0,
-          supplier: supplierSearch,
+          supplier: supplierSearch.trim(),
           unit,
+          purchaseHistory: [{
+            date: new Date().toISOString(),
+            quantity: quantityNum,
+            pricePerUnit: pricePerUnit,
+            supplier: supplierSearch.trim()
+          }]
         });
       } else {
         alert("Por favor, complete el nombre, proveedor, una cantidad válida y el costo total de la compra.");
@@ -157,14 +158,14 @@ const AddRawMaterialModal: React.FC<AddRawMaterialModalProps> = ({ isOpen, onClo
           </div>
            <div className="md:col-span-2 relative">
             <label className="block text-sm font-medium text-slate-700 mb-1">Proveedor</label>
-            <input type="text" value={supplierSearch} onChange={e => {setSupplierSearch(e.target.value); setIsSupplierDropdownOpen(true);}} placeholder="Buscar o añadir proveedor" className="w-full p-2 bg-white border rounded" required />
+            <input type="text" value={supplierSearch} onChange={e => {setSupplierSearch(e.target.value); setIsSupplierDropdownOpen(true);}} onBlur={() => setTimeout(() => setIsSupplierDropdownOpen(false), 150)} placeholder="Buscar o añadir proveedor" className="w-full p-2 bg-white border rounded" required />
               {isSupplierDropdownOpen && supplierSearch.length > 0 && (
                 <div className="absolute z-10 w-full bg-white border rounded-b-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
                   {filteredSuppliers.map(supplier => (
                     <div key={supplier} onClick={() => handleSelectSupplier(supplier)} className="p-2 hover:bg-indigo-100 cursor-pointer">{supplier}</div>
                   ))}
                   {canAddNewSupplier && (
-                    <div onClick={handleAddNewSupplier} className="p-2 text-indigo-600 font-bold hover:bg-indigo-100 cursor-pointer">
+                    <div onClick={() => handleSelectSupplier(supplierSearch)} className="p-2 text-indigo-600 font-bold hover:bg-indigo-100 cursor-pointer">
                       + Añadir nuevo proveedor: "{supplierSearch}"
                     </div>
                   )}
@@ -172,6 +173,35 @@ const AddRawMaterialModal: React.FC<AddRawMaterialModalProps> = ({ isOpen, onClo
               )}
           </div>
         </div>
+        
+        {isEditing && materialToEdit.purchaseHistory && materialToEdit.purchaseHistory.length > 0 && (
+          <div>
+            <h3 className="text-base font-semibold text-slate-800 mb-2">Historial de Compras</h3>
+            <div className="max-h-60 overflow-y-auto border rounded-lg bg-white">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-100 sticky top-0 z-10">
+                  <tr>
+                    <th className="p-2 text-left font-semibold text-slate-600">Fecha</th>
+                    <th className="p-2 text-left font-semibold text-slate-600">Proveedor</th>
+                    <th className="p-2 text-right font-semibold text-slate-600">Cantidad</th>
+                    <th className="p-2 text-right font-semibold text-slate-600">Precio/Unidad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...materialToEdit.purchaseHistory].reverse().map((record, index) => (
+                    <tr key={index} className="border-t">
+                      <td className="p-2 whitespace-nowrap">{new Date(record.date).toLocaleDateString()}</td>
+                      <td className="p-2">{record.supplier}</td>
+                      <td className="p-2 text-right whitespace-nowrap">{record.quantity.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} {materialToEdit.unit}</td>
+                      <td className="p-2 text-right whitespace-nowrap">${record.pricePerUnit.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         <div className="pt-4 flex justify-end gap-4">
             <button type="button" onClick={onClose} className="bg-slate-200 text-slate-800 px-6 py-2 rounded-lg hover:bg-slate-300">Cancelar</button>
             <button type="submit" className="bg-indigo-600 text-white px-6 py-2 rounded-lg shadow hover:bg-indigo-700">Guardar</button>

@@ -10,20 +10,18 @@ interface AddSaleModalProps {
   onSave: (saleDetails: {
     productId: string;
     quantity: number;
-    customerId: string;
+    customerName: string;
     deliveryMethod: 'Presencial' | 'Envío';
     shippingCost: number;
   }) => void;
-  onSaveCustomer: (name: string) => Customer;
 }
 
-const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose, sellableProducts, customers, onSave, onSaveCustomer }) => {
+const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose, sellableProducts, customers, onSave }) => {
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [quantity, setQuantity] = useState<number>(1);
   
   // Customer state
   const [customerSearch, setCustomerSearch] = useState('');
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
 
   // Delivery state
@@ -38,7 +36,6 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose, sellablePr
     setSelectedProductId('');
     setQuantity(1);
     setCustomerSearch('');
-    setSelectedCustomerId(null);
     setDeliveryMethod('Presencial');
     setShippingCost(0);
   };
@@ -56,15 +53,9 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose, sellablePr
 
   const canAddNewCustomer = customerSearch && !customers.some(c => c.name.toLowerCase() === customerSearch.toLowerCase());
 
-  const handleSelectCustomer = (customer: Customer) => {
-    setSelectedCustomerId(customer.id);
-    setCustomerSearch(customer.name);
+  const handleSelectCustomer = (customerName: string) => {
+    setCustomerSearch(customerName);
     setIsCustomerDropdownOpen(false);
-  };
-  
-  const handleAddNewCustomer = () => {
-    const newCustomer = onSaveCustomer(customerSearch);
-    handleSelectCustomer(newCustomer);
   };
   
   const subtotal = (selectedProduct?.pvp || 0) * quantity;
@@ -72,11 +63,11 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose, sellablePr
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedProductId && quantity > 0 && selectedCustomerId) {
+    if (selectedProductId && quantity > 0 && customerSearch) {
       onSave({
         productId: selectedProductId,
         quantity,
-        customerId: selectedCustomerId,
+        customerName: customerSearch.trim(),
         deliveryMethod,
         shippingCost
       });
@@ -110,14 +101,14 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose, sellablePr
             {/* Cliente */}
             <div className="relative">
               <label className="block text-sm font-medium text-slate-700 mb-1">Cliente</label>
-              <input type="text" value={customerSearch} onChange={e => {setCustomerSearch(e.target.value); setIsCustomerDropdownOpen(true); setSelectedCustomerId(null);}} placeholder="Buscar o añadir cliente" className="w-full p-2 bg-white border rounded" required />
+              <input type="text" value={customerSearch} onChange={e => {setCustomerSearch(e.target.value); setIsCustomerDropdownOpen(true);}} onBlur={() => setTimeout(() => setIsCustomerDropdownOpen(false), 150)} placeholder="Buscar o añadir cliente" className="w-full p-2 bg-white border rounded" required />
               {isCustomerDropdownOpen && (customerSearch.length > 0) && (
                 <div className="absolute z-10 w-full bg-white border rounded-b-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
                   {filteredCustomers.map(customer => (
-                    <div key={customer.id} onClick={() => handleSelectCustomer(customer)} className="p-2 hover:bg-indigo-100 cursor-pointer">{customer.name}</div>
+                    <div key={customer.id} onClick={() => handleSelectCustomer(customer.name)} className="p-2 hover:bg-indigo-100 cursor-pointer">{customer.name}</div>
                   ))}
                   {canAddNewCustomer && (
-                    <div onClick={handleAddNewCustomer} className="p-2 text-indigo-600 font-bold hover:bg-indigo-100 cursor-pointer">
+                    <div onClick={() => handleSelectCustomer(customerSearch)} className="p-2 text-indigo-600 font-bold hover:bg-indigo-100 cursor-pointer">
                       + Añadir nuevo cliente: "{customerSearch}"
                     </div>
                   )}

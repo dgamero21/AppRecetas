@@ -8,15 +8,17 @@ interface WasteModalProps {
   isOpen: boolean;
   onClose: () => void;
   item: { id: string; name: string; stock: number; unit: Unit | 'und' } | null;
-  onSave: (itemId: string, quantity: number, unit: Unit | 'und') => void;
+  onSave: (itemId: string, quantity: number, unit: Unit | 'und', reason: string) => void;
 }
 
 const WasteModal: React.FC<WasteModalProps> = ({ isOpen, onClose, item, onSave }) => {
     const [quantity, setQuantity] = useState('');
+    const [reason, setReason] = useState('');
 
     useEffect(() => {
         if (isOpen) {
             setQuantity('');
+            setReason('');
         }
     }, [isOpen]);
     
@@ -26,7 +28,7 @@ const WasteModal: React.FC<WasteModalProps> = ({ isOpen, onClose, item, onSave }
         e.preventDefault();
         const quantityNum = parseFloat(quantity);
         if (quantityNum > 0 && quantityNum <= item.stock) {
-            onSave(item.id, quantityNum, item.unit);
+            onSave(item.id, quantityNum, item.unit, reason);
             onClose();
         } else {
             alert(`Por favor, ingrese una cantidad válida (mayor que 0 y menor o igual al stock de ${item.stock})`);
@@ -40,6 +42,10 @@ const WasteModal: React.FC<WasteModalProps> = ({ isOpen, onClose, item, onSave }
                     <label className="block text-sm font-medium text-slate-700 mb-1">Cantidad a Mermar ({item.unit})</label>
                     <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)} placeholder="0" className="w-full p-2 bg-white border rounded" step="any" required max={item.stock} />
                     <p className="text-xs text-slate-500 mt-1">Stock disponible: {item.stock} {item.unit}</p>
+                </div>
+                 <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Motivo (Opcional)</label>
+                    <input type="text" value={reason} onChange={e => setReason(e.target.value)} placeholder="Ej: Producto dañado, caducado..." className="w-full p-2 bg-white border rounded" />
                 </div>
                 <div className="pt-4 flex justify-end gap-4">
                     <button type="button" onClick={onClose} className="bg-slate-200 text-slate-800 px-6 py-2 rounded-lg hover:bg-slate-300">Cancelar</button>
@@ -57,10 +63,9 @@ interface PurchaseModalProps {
   material: RawMaterial | null;
   suppliers: string[];
   onSave: (details: { materialId: string; quantity: number; totalCost: number; supplier: string; }) => void;
-  onSaveSupplier: (name: string) => string;
 }
 
-const PurchaseModal: React.FC<PurchaseModalProps> = ({ isOpen, onClose, material, suppliers, onSave, onSaveSupplier }) => {
+const PurchaseModal: React.FC<PurchaseModalProps> = ({ isOpen, onClose, material, suppliers, onSave }) => {
   const [quantity, setQuantity] = useState('');
   const [totalCost, setTotalCost] = useState('');
   const [supplierSearch, setSupplierSearch] = useState('');
@@ -90,11 +95,6 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({ isOpen, onClose, material
     setIsSupplierDropdownOpen(false);
   };
   
-  const handleAddNewSupplier = () => {
-    const newSupplier = onSaveSupplier(supplierSearch);
-    handleSelectSupplier(newSupplier);
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const quantityNum = parseFloat(quantity);
@@ -105,7 +105,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({ isOpen, onClose, material
         materialId: material.id,
         quantity: quantityNum,
         totalCost: totalCostNum,
-        supplier: supplierSearch,
+        supplier: supplierSearch.trim(),
       });
       resetForm();
       onClose();
@@ -131,14 +131,14 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({ isOpen, onClose, material
         </div>
         <div className="relative">
           <label className="block text-sm font-medium text-slate-700 mb-1">Proveedor</label>
-          <input type="text" value={supplierSearch} onChange={e => {setSupplierSearch(e.target.value); setIsSupplierDropdownOpen(true);}} placeholder="Buscar o añadir proveedor" className="w-full p-2 bg-white border rounded" required />
+          <input type="text" value={supplierSearch} onChange={e => {setSupplierSearch(e.target.value); setIsSupplierDropdownOpen(true);}} onBlur={() => setTimeout(() => setIsSupplierDropdownOpen(false), 150)} placeholder="Buscar o añadir proveedor" className="w-full p-2 bg-white border rounded" required />
           {isSupplierDropdownOpen && supplierSearch.length > 0 && (
             <div className="absolute z-10 w-full bg-white border rounded-b-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
               {filteredSuppliers.map(supplier => (
                 <div key={supplier} onClick={() => handleSelectSupplier(supplier)} className="p-2 hover:bg-indigo-100 cursor-pointer">{supplier}</div>
               ))}
               {canAddNewSupplier && (
-                <div onClick={handleAddNewSupplier} className="p-2 text-indigo-600 font-bold hover:bg-indigo-100 cursor-pointer">
+                <div onClick={() => handleSelectSupplier(supplierSearch)} className="p-2 text-indigo-600 font-bold hover:bg-indigo-100 cursor-pointer">
                   + Añadir nuevo proveedor: "{supplierSearch}"
                 </div>
               )}
@@ -161,11 +161,10 @@ interface RawMaterialsViewProps {
   onSaveRawMaterial: (material: RawMaterial) => void;
   onDeleteRawMaterial: (id: string) => void;
   onPurchaseRawMaterial: (details: { materialId: string; quantity: number; totalCost: number; supplier: string; }) => void;
-  onSaveSupplier: (name: string) => string;
-  onWasteItem: (itemId: string, itemType: WastedItemType, quantity: number, unit: Unit | 'und') => void;
+  onWasteItem: (itemId: string, itemType: WastedItemType, quantity: number, unit: Unit | 'und', reason: string) => void;
 }
 
-const RawMaterialsView: React.FC<RawMaterialsViewProps> = ({ rawMaterials, suppliers, onSaveRawMaterial, onDeleteRawMaterial, onPurchaseRawMaterial, onSaveSupplier, onWasteItem }) => {
+const RawMaterialsView: React.FC<RawMaterialsViewProps> = ({ rawMaterials, suppliers, onSaveRawMaterial, onDeleteRawMaterial, onPurchaseRawMaterial, onWasteItem }) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [isWasteModalOpen, setIsWasteModalOpen] = useState(false);
@@ -255,7 +254,6 @@ const RawMaterialsView: React.FC<RawMaterialsViewProps> = ({ rawMaterials, suppl
         onSave={onSaveRawMaterial}
         materialToEdit={editingMaterial}
         suppliers={suppliers}
-        onSaveSupplier={onSaveSupplier}
       />
 
       <PurchaseModal
@@ -264,14 +262,13 @@ const RawMaterialsView: React.FC<RawMaterialsViewProps> = ({ rawMaterials, suppl
         material={purchasingMaterial}
         suppliers={suppliers}
         onSave={onPurchaseRawMaterial}
-        onSaveSupplier={onSaveSupplier}
       />
 
       <WasteModal
         isOpen={isWasteModalOpen}
         onClose={() => setIsWasteModalOpen(false)}
         item={wastingMaterial}
-        onSave={(itemId, quantity, unit) => onWasteItem(itemId, 'RAW_MATERIAL', quantity, unit)}
+        onSave={(itemId, quantity, unit, reason) => onWasteItem(itemId, 'RAW_MATERIAL', quantity, unit, reason)}
       />
 
     </div>

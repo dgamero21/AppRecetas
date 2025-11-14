@@ -1,5 +1,12 @@
 export type Unit = 'kg' | 'und' | 'l';
 
+export interface PurchaseRecord {
+  date: string;
+  quantity: number;
+  pricePerUnit: number;
+  supplier: string;
+}
+
 export interface RawMaterial {
   id: string;
   name: string;
@@ -8,6 +15,7 @@ export interface RawMaterial {
   minStock: number;
   supplier: string;
   unit: Unit;
+  purchaseHistory: PurchaseRecord[];
 }
 
 export interface FixedCost {
@@ -61,6 +69,7 @@ export interface WasteRecord {
   quantity: number;
   unit?: Unit | 'und'; 
   date: string;
+  reason: string;
 }
 
 
@@ -83,5 +92,22 @@ export interface Sale {
     totalCharged: number;
     date: string;
 }
+
+export interface User {
+  id: string;
+  name: string;
+}
+
+export interface UserData {
+  rawMaterials: RawMaterial[];
+  fixedCosts: FixedCost[];
+  recipes: Recipe[];
+  sales: Sale[];
+  sellableProducts: SellableProduct[];
+  customers: Customer[];
+  suppliers: string[];
+  wasteRecords: WasteRecord[];
+}
+
 
 export type View = 'dashboard' | 'recipes' | 'rawMaterials' | 'fixedCosts' | 'sales' | 'pantry' | 'waste';

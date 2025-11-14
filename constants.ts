@@ -1,8 +1,14 @@
-
-import { RawMaterial, FixedCost, Unit } from './types';
+import { UserData, Unit } from './types';
 
 export const UNITS: Unit[] = ['kg', 'und', 'l'];
 
-export const INITIAL_RAW_MATERIALS: RawMaterial[] = [];
-
-export const INITIAL_FIXED_COSTS: FixedCost[] = [];
+export const DEFAULT_USER_DATA: UserData = {
+  rawMaterials: [],
+  fixedCosts: [],
+  recipes: [],
+  sales: [],
+  sellableProducts: [],
+  customers: [],
+  suppliers: ['Proveedor General'],
+  wasteRecords: [],
+};

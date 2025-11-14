@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SellableProduct, WastedItemType, Unit } from '../../types';
 import Card from '../common/Card';
 import Modal from '../common/Modal';
@@ -8,16 +8,25 @@ interface WasteModalProps {
   isOpen: boolean;
   onClose: () => void;
   item: { id: string; name: string; stock: number; unit: Unit | 'und' } | null;
-  onSave: (itemId: string, quantity: number, unit: Unit | 'und') => void;
+  onSave: (itemId: string, quantity: number, unit: Unit | 'und', reason: string) => void;
 }
 const WasteModal: React.FC<WasteModalProps> = ({ isOpen, onClose, item, onSave }) => {
     const [quantity, setQuantity] = useState('');
+    const [reason, setReason] = useState('');
+
+    useEffect(() => {
+        if (isOpen) {
+            setQuantity('');
+            setReason('');
+        }
+    }, [isOpen]);
+
     if (!item) return null;
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const quantityNum = parseFloat(quantity);
         if (quantityNum > 0 && quantityNum <= item.stock) {
-            onSave(item.id, quantityNum, item.unit);
+            onSave(item.id, quantityNum, item.unit, reason);
             onClose();
         } else {
             alert(`Por favor, ingrese una cantidad válida (mayor que 0 y menor o igual al stock de ${item.stock})`);
@@ -30,6 +39,10 @@ const WasteModal: React.FC<WasteModalProps> = ({ isOpen, onClose, item, onSave }
                     <label className="block text-sm font-medium text-slate-700 mb-1">Cantidad a Mermar ({item.unit})</label>
                     <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)} placeholder="0" className="w-full p-2 bg-white border rounded" step="any" required max={item.stock} />
                     <p className="text-xs text-slate-500 mt-1">Stock disponible: {item.stock} {item.unit}</p>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Motivo (Opcional)</label>
+                    <input type="text" value={reason} onChange={e => setReason(e.target.value)} placeholder="Ej: Producto dañado, caducado..." className="w-full p-2 bg-white border rounded" />
                 </div>
                 <div className="pt-4 flex justify-end gap-4">
                     <button type="button" onClick={onClose} className="bg-slate-200 text-slate-800 px-6 py-2 rounded-lg hover:bg-slate-300">Cancelar</button>
@@ -152,7 +165,7 @@ interface PantryViewProps {
   products: SellableProduct[];
   onPackage: (sourceProductId: string, packSize: number, newPackageName: string, newPackagePVP: number) => void;
   onTransform: (sourceProductId: string, quantityToTransform: number, newProductName: string, newProductYield: number, newProductPVP: number) => void;
-  onWaste: (itemId: string, itemType: WastedItemType, quantity: number, unit: Unit | 'und') => void;
+  onWaste: (itemId: string, itemType: WastedItemType, quantity: number, unit: Unit | 'und', reason: string) => void;
 }
 
 const PantryView: React.FC<PantryViewProps> = ({ products, onPackage, onTransform, onWaste }) => {
@@ -210,7 +223,7 @@ const PantryView: React.FC<PantryViewProps> = ({ products, onPackage, onTransfor
                 isOpen={!!wastingProduct}
                 onClose={() => setWastingProduct(null)}
                 item={wastingProduct ? { ...wastingProduct, unit: 'und' } : null}
-                onSave={(itemId, qty, unit) => onWaste(itemId, 'PRODUCT', qty, unit)}
+                onSave={(itemId, qty, unit, reason) => onWaste(itemId, 'PRODUCT', qty, unit, reason)}
             />
             <PackageModal
                 isOpen={!!packagingProduct}

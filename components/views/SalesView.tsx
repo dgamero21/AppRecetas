@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Recipe, Sale, SellableProduct, Customer, RawMaterial } from '../../types';
 import Card from '../common/Card';
 import AddSaleModal from '../AddSaleModal';
@@ -13,19 +13,49 @@ interface SalesViewProps {
   onAddSale: (saleDetails: {
     productId: string;
     quantity: number;
-    customerId: string;
+    customerName: string;
     deliveryMethod: 'Presencial' | 'Envío';
     shippingCost: number;
   }) => void;
   onDeleteSale: (saleId: string) => void;
-  onSaveCustomer: (name: string) => Customer;
 }
 
-const SalesView: React.FC<SalesViewProps> = ({ recipes, rawMaterials, sellableProducts, sales, customers, onAddSale, onDeleteSale, onSaveCustomer }) => {
+const SalesView: React.FC<SalesViewProps> = ({ recipes, rawMaterials, sellableProducts, sales, customers, onAddSale, onDeleteSale }) => {
   const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
+  
+  const [filterCustomerId, setFilterCustomerId] = useState<string>('');
+  const [filterStartDate, setFilterStartDate] = useState<string>('');
+  const [filterEndDate, setFilterEndDate] = useState<string>('');
 
   const availableToSell = sellableProducts.filter(p => p.quantityInStock > 0);
+
+  const filteredSales = useMemo(() => {
+    return sales.filter(sale => {
+      // Customer filter
+      if (filterCustomerId && sale.customerId !== filterCustomerId) {
+        return false;
+      }
+      
+      const saleDateStr = sale.date.slice(0, 10); // YYYY-MM-DD
+
+      // Date range filter
+      if (filterStartDate && saleDateStr < filterStartDate) {
+        return false;
+      }
+      if (filterEndDate && saleDateStr > filterEndDate) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [sales, filterCustomerId, filterStartDate, filterEndDate]);
+  
+  const handleClearFilters = () => {
+    setFilterCustomerId('');
+    setFilterStartDate('');
+    setFilterEndDate('');
+  };
 
   const handleDelete = (id: string) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar esta venta? Esto restaurará el stock del producto terminado.')) {
@@ -54,36 +84,76 @@ const SalesView: React.FC<SalesViewProps> = ({ recipes, rawMaterials, sellablePr
                 </button>
             </div>
         </div>
+        
+        <Card className="mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Filtrar por Cliente</label>
+                    <select
+                        value={filterCustomerId}
+                        onChange={(e) => setFilterCustomerId(e.target.value)}
+                        className="w-full p-2 bg-white border rounded"
+                    >
+                        <option value="">Todos los clientes</option>
+                        {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Desde</label>
+                    <input
+                        type="date"
+                        value={filterStartDate}
+                        onChange={(e) => setFilterStartDate(e.target.value)}
+                        className="w-full p-2 bg-white border rounded"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Hasta</label>
+                    <input
+                        type="date"
+                        value={filterEndDate}
+                        onChange={(e) => setFilterEndDate(e.target.value)}
+                        className="w-full p-2 bg-white border rounded"
+                    />
+                </div>
+                 <button 
+                    onClick={handleClearFilters}
+                    className="w-full bg-slate-200 text-slate-800 px-4 py-2 rounded-lg hover:bg-slate-300 transition-colors text-sm font-medium"
+                  >
+                    Limpiar Filtros
+                  </button>
+            </div>
+        </Card>
 
         <Card>
-          {sales.length === 0 ? (
+          {filteredSales.length === 0 ? (
              <div className="text-center py-12">
-                <h3 className="text-xl font-semibold text-slate-700">No hay ventas registradas</h3>
-                <p className="text-slate-500 mt-2">Registra tu primera venta para ver el historial aquí.</p>
+                <h3 className="text-xl font-semibold text-slate-700">No hay ventas que coincidan</h3>
+                <p className="text-slate-500 mt-2">{sales.length > 0 ? 'Prueba a cambiar o limpiar los filtros.' : 'Registra tu primera venta para ver el historial aquí.'}</p>
              </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="p-3">Fecha</th>
-                    <th className="p-3">Producto</th>
-                    <th className="p-3">Cliente</th>
-                    <th className="p-3 text-right">Cant.</th>
-                    <th className="p-3 text-right">Venta Prod.</th>
-                    <th className="p-3 text-right">Envío</th>
-                    <th className="p-3 text-right">Total Cobrado</th>
-                    <th className="p-3 text-right">Ganancia</th>
-                    <th className="p-3 text-center">Acciones</th>
+                    <th className="p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Fecha</th>
+                    <th className="p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Producto</th>
+                    <th className="p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Cliente</th>
+                    <th className="p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Cant.</th>
+                    <th className="p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Venta Prod.</th>
+                    <th className="p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Envío</th>
+                    <th className="p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Total</th>
+                    <th className="p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Ganancia</th>
+                    <th className="p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {sales.map(s => {
+                  {filteredSales.map(s => {
                       const product = sellableProducts.find(p => p.id === s.productId);
                       const customer = customers.find(c => c.id === s.customerId);
                       return (
                           <tr key={s.id} className="border-b">
-                              <td className="p-3 text-slate-500">{new Date(s.date).toLocaleDateString()}</td>
+                              <td className="p-3 text-slate-500 whitespace-nowrap">{new Date(s.date).toLocaleDateString()}</td>
                               <td className="p-3 font-medium text-slate-900">{product?.name || 'Producto eliminado'}</td>
                               <td className="p-3 text-slate-700">{customer?.name || 'Cliente no encontrado'}</td>
                               <td className="p-3 text-slate-700 text-right">{s.quantity}</td>
@@ -109,7 +179,6 @@ const SalesView: React.FC<SalesViewProps> = ({ recipes, rawMaterials, sellablePr
             onSave={onAddSale}
             sellableProducts={sellableProducts}
             customers={customers}
-            onSaveCustomer={onSaveCustomer}
         />
         <ProposalModal
             isOpen={isProposalModalOpen}
