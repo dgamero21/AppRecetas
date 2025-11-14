@@ -1,0 +1,5 @@
+{
+  "name": "Calculadora de Costos de Recetas",
+  "description": "Una aplicación para gestionar materias primas, costos y calcular el precio de venta al público (PVP) de recetas. Registra tus ingredientes, costos fijos y crea recetas para ver un desglose detallado de los costos y la rentabilidad.",
+  "requestFramePermissions": []
+}
