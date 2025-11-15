@@ -3,6 +3,7 @@ import { Recipe, Sale, SellableProduct, Customer, RawMaterial } from '../../type
 import Card from '../common/Card';
 import AddSaleModal from '../AddSaleModal';
 import ProposalModal from '../ProposalModal';
+import Tooltip from '../common/Tooltip';
 
 interface SalesViewProps {
   recipes: Recipe[];
@@ -68,20 +69,24 @@ const SalesView: React.FC<SalesViewProps> = ({ recipes, rawMaterials, sellablePr
         <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">Ventas y Propuestas</h2>
             <div className="flex gap-2">
-                <button
-                onClick={() => setIsProposalModalOpen(true)}
-                className="bg-slate-500 text-white px-4 py-2 rounded-lg shadow hover:bg-slate-600 transition-colors flex items-center gap-2"
-                >
-                Crear Propuesta
-                </button>
-                <button
-                onClick={() => setIsSaleModalOpen(true)}
-                disabled={availableToSell.length === 0}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition-colors flex items-center gap-2 disabled:bg-slate-400 disabled:cursor-not-allowed"
-                >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" /></svg>
-                Registrar Venta
-                </button>
+                <Tooltip text="Analizar rentabilidad de un pedido grande">
+                  <button
+                  onClick={() => setIsProposalModalOpen(true)}
+                  className="bg-slate-500 text-white px-4 py-2 rounded-lg shadow hover:bg-slate-600 transition-all duration-150 ease-in-out active:scale-95 transform flex items-center gap-2"
+                  >
+                  Crear Propuesta
+                  </button>
+                </Tooltip>
+                <Tooltip text="Registrar una nueva venta y descontar stock">
+                  <button
+                  onClick={() => setIsSaleModalOpen(true)}
+                  disabled={availableToSell.length === 0}
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition-all duration-150 ease-in-out active:scale-95 transform flex items-center gap-2 disabled:bg-slate-400 disabled:cursor-not-allowed"
+                  >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" /></svg>
+                  Registrar Venta
+                  </button>
+                </Tooltip>
             </div>
         </div>
         
@@ -118,7 +123,7 @@ const SalesView: React.FC<SalesViewProps> = ({ recipes, rawMaterials, sellablePr
                 </div>
                  <button 
                     onClick={handleClearFilters}
-                    className="w-full bg-slate-200 text-slate-800 px-4 py-2 rounded-lg hover:bg-slate-300 transition-colors text-sm font-medium"
+                    className="w-full bg-slate-200 text-slate-800 px-4 py-2 rounded-lg hover:bg-slate-300 transition-transform active:scale-95 text-sm font-medium"
                   >
                     Limpiar Filtros
                   </button>
@@ -162,7 +167,9 @@ const SalesView: React.FC<SalesViewProps> = ({ recipes, rawMaterials, sellablePr
                               <td className="p-3 font-semibold text-slate-800 text-right">${s.totalCharged.toFixed(2)}</td>
                               <td className="p-3 font-semibold text-emerald-600 text-right">${s.profit.toFixed(2)}</td>
                               <td className="p-3 text-center">
-                                <button onClick={() => handleDelete(s.id)} className="text-slate-500 hover:text-red-600"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg></button>
+                                <Tooltip text="Eliminar y restaurar stock">
+                                  <button onClick={() => handleDelete(s.id)} className="p-1.5 rounded-full text-slate-500 hover:text-red-600 hover:bg-red-100 transition-all duration-150 transform hover:scale-110 active:scale-95"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg></button>
+                                </Tooltip>
                               </td>
                           </tr>
                       )

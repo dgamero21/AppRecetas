@@ -203,8 +203,8 @@ const AddRawMaterialModal: React.FC<AddRawMaterialModalProps> = ({ isOpen, onClo
         )}
 
         <div className="pt-4 flex justify-end gap-4">
-            <button type="button" onClick={onClose} className="bg-slate-200 text-slate-800 px-6 py-2 rounded-lg hover:bg-slate-300">Cancelar</button>
-            <button type="submit" className="bg-indigo-600 text-white px-6 py-2 rounded-lg shadow hover:bg-indigo-700">Guardar</button>
+            <button type="button" onClick={onClose} className="bg-slate-200 text-slate-800 px-6 py-2 rounded-lg hover:bg-slate-300 transition-transform active:scale-95">Cancelar</button>
+            <button type="submit" className="bg-indigo-600 text-white px-6 py-2 rounded-lg shadow hover:bg-indigo-700 transition-transform active:scale-95">Guardar</button>
         </div>
       </form>
     </Modal>

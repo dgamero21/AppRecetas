@@ -107,60 +107,106 @@ const ProductionModal: React.FC<ProductionModalProps> = ({ isOpen, onClose, reci
         {/* Left: Planning */}
         <div>
           <h3 className="font-bold text-lg mb-4">1. Planificar Producción</h3>
-          <div className="bg-white p-4 rounded-lg border space-y-4">
-            <div className="flex bg-slate-100 p-1 rounded-lg">
-              <button onClick={() => setMode('byUnits')} className={`w-1/2 p-2 rounded-md font-semibold text-sm transition-colors ${mode === 'byUnits' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-200'}`}>Por Unidades</button>
-              <button onClick={() => setMode('byIngredient')} className={`w-1/2 p-2 rounded-md font-semibold text-sm transition-colors ${mode === 'byIngredient' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-200'}`}>Por Ingrediente</button>
-            </div>
-            
-            {mode === 'byUnits' && (
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Unidades a Producir</label>
-                <input type="number" value={plannedQuantity} onChange={e => setPlannedQuantity(e.target.value)} className="w-full p-2 border rounded mt-1 bg-white" />
-              </div>
-            )}
-            
-            {mode === 'byIngredient' && (
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Calcular máximo posible</label>
-                <p className="text-center font-bold text-2xl text-indigo-600 my-4">Máximo a producir: {derivedPlannedQuantity} und</p>
-                 <p className="text-xs text-slate-500 text-center">Calculado en base a la materia prima más limitante de tu inventario.</p>
-              </div>
-            )}
-          </div>
-          
-          <h3 className="font-bold text-lg mb-4 mt-6">3. Registrar Producción Real</h3>
-           <div className="bg-white p-4 rounded-lg border">
-              <label className="block text-sm font-medium text-slate-700">Cantidad Real Producida</label>
-              <input type="number" value={actualQuantity} onChange={e => setActualQuantity(e.target.value)} step="any" className="w-full p-2 border rounded mt-1 bg-white" />
-              <p className="text-xs text-slate-500 mt-1">Ajusta si obtuviste más o menos de lo planeado. Puedes usar decimales para remanentes.</p>
-           </div>
-        </div>
+          <div className="bg-white p-4 rounded-lg border">
+            <div className="space-y-4">
+                {/* Mode switcher */}
+                <div className="flex gap-2">
+                    <button
+                        type="button"
+                        onClick={() => setMode('byUnits')}
+                        className={`flex-1 p-2 rounded border font-semibold ${mode === 'byUnits' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white hover:bg-slate-50'}`}
+                    >
+                        Por Unidades
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setMode('byIngredient')}
+                        className={`flex-1 p-2 rounded border font-semibold ${mode === 'byIngredient' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white hover:bg-slate-50'}`}
+                    >
+                        Por Stock Máximo
+                    </button>
+                </div>
 
+                {mode === 'byUnits' && (
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700">Unidades a Producir</label>
+                        <input
+                            type="number"
+                            value={plannedQuantity}
+                            onChange={(e) => setPlannedQuantity(e.target.value)}
+                            className="w-full p-2 border rounded mt-1 bg-white"
+                            min="1"
+                        />
+                    </div>
+                )}
+                
+                {mode === 'byIngredient' && (
+                    <div>
+                        <p className="text-sm text-slate-700">
+                            Calculando producción máxima basada en el stock de materias primas...
+                        </p>
+                        <p className="text-2xl font-bold mt-2">{derivedPlannedQuantity} unidades</p>
+                    </div>
+                )}
+            </div>
+          </div>
+        </div>
         {/* Right: Requirements */}
         <div>
-          <h3 className="font-bold text-lg mb-4">2. Materia Prima Necesaria</h3>
-          <div className="bg-slate-50 p-4 rounded-lg border space-y-2">
-            {productionRequirements.requirements.map(req => (
-              <div key={req.rawMaterialId} className="flex justify-between items-center text-sm">
-                <span className={`font-medium ${!req.hasEnough ? 'text-red-600' : ''}`}>{req.materialName}</span>
-                <div className={`text-right ${!req.hasEnough ? 'text-red-600' : ''}`}>
-                  <span className="font-mono font-semibold">{req.required.toFixed(2)} {req.unit}</span>
-                  <span className="text-xs text-slate-400 block">/ {req.available.toFixed(2)} disp.</span>
-                </div>
-              </div>
-            ))}
-            {!productionRequirements.isPossible && derivedPlannedQuantity > 0 && (
-              <p className="text-center text-red-600 font-bold bg-red-100 p-2 rounded-md mt-4">¡Stock Insuficiente!</p>
-            )}
+          <h3 className="font-bold text-lg mb-4">2. Materias Primas Requeridas</h3>
+          <div className="bg-slate-50 p-4 rounded-lg border max-h-[40vh] overflow-y-auto">
+            <table className="w-full text-sm">
+                <thead>
+                    <tr className="text-left">
+                        <th className="pb-2">Ingrediente</th>
+                        <th className="pb-2 text-right">Necesario</th>
+                        <th className="pb-2 text-right">Disponible</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {productionRequirements.requirements.map(req => (
+                        <tr key={req.rawMaterialId} className={`border-t ${!req.hasEnough ? 'bg-red-50' : ''}`}>
+                            <td className={`py-2 font-medium ${!req.hasEnough ? 'text-red-800' : ''}`}>{req.materialName}</td>
+                            <td className="py-2 text-right font-mono">{req.required.toFixed(2)} {req.unit}</td>
+                            <td className={`py-2 text-right font-mono font-bold ${!req.hasEnough ? 'text-red-600' : 'text-green-600'}`}>
+                                {req.available.toFixed(2)} {req.unit}
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
           </div>
+          {!productionRequirements.isPossible && (
+            <p className="text-red-600 font-semibold text-sm mt-2">
+                ¡Atención! No hay suficiente stock de uno o más ingredientes.
+            </p>
+          )}
         </div>
-
       </div>
+
+      <div className="mt-6 bg-white p-4 rounded-lg border">
+          <h3 className="font-bold text-lg mb-4">3. Registrar Producción Real</h3>
+          <div>
+              <label className="block text-sm font-medium text-slate-700">Unidades reales obtenidas</label>
+              <input
+                  type="number"
+                  value={actualQuantity}
+                  onChange={(e) => setActualQuantity(e.target.value)}
+                  className="w-full p-2 border rounded mt-1 bg-white"
+                  min="0"
+              />
+              <p className="text-xs text-slate-500 mt-1">Ajusta este valor si la producción real fue diferente a la planeada.</p>
+          </div>
+      </div>
+      
       <div className="mt-8 flex justify-end gap-4">
-        <button onClick={onClose} className="bg-slate-200 text-slate-800 px-6 py-2 rounded-lg hover:bg-slate-300">Cancelar</button>
-        <button onClick={handleProduce} disabled={!productionRequirements.isPossible || derivedPlannedQuantity <= 0} className="bg-emerald-600 text-white px-6 py-2 rounded-lg shadow hover:bg-emerald-700 disabled:bg-slate-400 disabled:cursor-not-allowed">
-          Confirmar Producción
+        <button onClick={onClose} className="bg-slate-200 text-slate-800 px-6 py-2 rounded-lg hover:bg-slate-300 transition-transform active:scale-95">Cancelar</button>
+        <button 
+            onClick={handleProduce}
+            disabled={!productionRequirements.isPossible || derivedPlannedQuantity <= 0}
+            className="bg-emerald-600 text-white px-6 py-2 rounded-lg shadow hover:bg-emerald-700 transition-transform active:scale-95 disabled:bg-slate-400 disabled:cursor-not-allowed"
+        >
+            Confirmar Producción
         </button>
       </div>
     </Modal>

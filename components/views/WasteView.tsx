@@ -1,6 +1,7 @@
 import React from 'react';
 import { WasteRecord } from '../../types';
 import Card from '../common/Card';
+import Tooltip from '../common/Tooltip';
 
 interface WasteViewProps {
   wasteRecords: WasteRecord[];
@@ -59,11 +60,13 @@ const WasteView: React.FC<WasteViewProps> = ({ wasteRecords, onDeleteWasteRecord
                     </td>
                     <td className="p-3 text-slate-600 italic">{record.reason || 'N/A'}</td>
                     <td className="p-3 text-center">
-                      <button onClick={() => handleDelete(record.id)} className="text-slate-500 hover:text-red-600" title="Eliminar y Restaurar Stock">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
-                        </svg>
-                      </button>
+                      <Tooltip text="Eliminar y restaurar stock">
+                        <button onClick={() => handleDelete(record.id)} className="p-1.5 rounded-full text-slate-500 hover:text-red-600 hover:bg-red-100 transition-all duration-150 transform hover:scale-110 active:scale-95">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      </Tooltip>
                     </td>
                   </tr>
                 ))}

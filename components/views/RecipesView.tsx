@@ -3,6 +3,7 @@ import { Recipe, RawMaterial, FixedCost, SellableProduct } from '../../types';
 import CreateRecipeModal from '../CreateRecipeModal';
 import ProductionModal from '../ProductionModal';
 import Card from '../common/Card';
+import Tooltip from '../common/Tooltip';
 
 interface RecipesViewProps {
   recipes: Recipe[];
@@ -46,13 +47,15 @@ const RecipesView: React.FC<RecipesViewProps> = ({ recipes, rawMaterials, fixedC
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Mis Recetas</h2>
-        <button
-          onClick={() => handleOpenModal()}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition-colors flex items-center gap-2"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" /></svg>
-          Crear Nueva Receta
-        </button>
+        <Tooltip text="Crear una nueva receta y calcular sus costos">
+          <button
+            onClick={() => handleOpenModal()}
+            className="bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition-all duration-150 ease-in-out active:scale-95 transform flex items-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" /></svg>
+            Crear Nueva Receta
+          </button>
+        </Tooltip>
       </div>
 
       {recipes.length === 0 ? (
@@ -67,9 +70,9 @@ const RecipesView: React.FC<RecipesViewProps> = ({ recipes, rawMaterials, fixedC
               <div>
                 <div className="flex justify-between items-start">
                   <h3 className="text-lg font-bold mb-2">{recipe.name}</h3>
-                  <div className="flex items-center gap-2 -mt-2 -mr-2">
-                    <button onClick={() => handleOpenModal(recipe)} className="text-slate-400 hover:text-indigo-600 p-2"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" /></svg></button>
-                    <button onClick={() => handleDelete(recipe.id)} className="text-slate-400 hover:text-red-600 p-2"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg></button>
+                  <div className="flex items-center gap-0 -mt-2 -mr-2">
+                    <Tooltip text="Editar receta"><button onClick={() => handleOpenModal(recipe)} className="text-slate-400 hover:text-indigo-600 p-2 rounded-full hover:bg-indigo-100 transition-colors duration-150 active:scale-90"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" /></svg></button></Tooltip>
+                    <Tooltip text="Eliminar receta"><button onClick={() => handleDelete(recipe.id)} className="text-slate-400 hover:text-red-600 p-2 rounded-full hover:bg-red-100 transition-colors duration-150 active:scale-90"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg></button></Tooltip>
                   </div>
                 </div>
                  <div className="bg-slate-50 p-2 rounded-md mb-4">
@@ -88,12 +91,14 @@ const RecipesView: React.FC<RecipesViewProps> = ({ recipes, rawMaterials, fixedC
                 </div>
               </div>
               <div className="mt-6 flex">
-                <button 
-                  onClick={() => handleOpenProductionModal(recipe)}
-                  className="w-full bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-emerald-600 transition-colors"
-                >
-                  Producir
-                </button>
+                <Tooltip text="Registrar una nueva producción de esta receta">
+                  <button 
+                    onClick={() => handleOpenProductionModal(recipe)}
+                    className="w-full bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-emerald-600 transition-all duration-150 transform active:scale-95"
+                  >
+                    Producir
+                  </button>
+                </Tooltip>
               </div>
             </Card>
           ))}

@@ -1,5 +1,5 @@
-import React from 'react';
-import { RawMaterial, FixedCost, Sale, SellableProduct } from '../../types';
+import React, { useMemo } from 'react';
+import { RawMaterial, FixedCost, Sale, SellableProduct, Customer } from '../../types';
 import Card from '../common/Card';
 
 interface DashboardViewProps {
@@ -7,17 +7,58 @@ interface DashboardViewProps {
   fixedCosts: FixedCost[];
   sales: Sale[];
   sellableProducts: SellableProduct[];
+  customers: Customer[];
 }
 
-const DashboardView: React.FC<DashboardViewProps> = ({ rawMaterials, fixedCosts, sales, sellableProducts }) => {
+const DashboardView: React.FC<DashboardViewProps> = ({ rawMaterials, fixedCosts, sales, sellableProducts, customers }) => {
   const totalInventoryValue = rawMaterials.reduce((sum, item) => sum + (item.stock * item.purchasePrice), 0);
   const totalPantryValue = sellableProducts.reduce((sum, item) => sum + (item.quantityInStock * item.cost), 0);
   const lowStockItems = rawMaterials.filter(item => item.stock < item.minStock);
   const totalFixedCosts = fixedCosts.reduce((sum, cost) => sum + cost.monthlyCost, 0);
 
-  // Placeholder for sales summary
   const totalSalesValue = sales.reduce((sum, sale) => sum + sale.totalSale, 0);
   const totalProfit = sales.reduce((sum, sale) => sum + sale.profit, 0);
+
+  const topSellingProducts = useMemo(() => {
+    if (!sales || sales.length === 0) return [];
+    
+    const salesByProduct = sales.reduce<{[key: string]: number}>((acc, sale) => {
+      acc[sale.productId] = (acc[sale.productId] || 0) + sale.quantity;
+      return acc;
+    }, {});
+
+    return Object.entries(salesByProduct)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([productId, quantitySold]) => {
+        const product = sellableProducts.find(p => p.id === productId);
+        return {
+          name: product?.name || 'Producto Desconocido',
+          quantitySold,
+        };
+      });
+  }, [sales, sellableProducts]);
+
+  const topCustomers = useMemo(() => {
+    if (!sales || sales.length === 0) return [];
+
+    const salesByCustomer = sales.reduce<{[key: string]: number}>((acc, sale) => {
+      acc[sale.customerId] = (acc[sale.customerId] || 0) + sale.totalSale;
+      return acc;
+    }, {});
+
+    return Object.entries(salesByCustomer)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([customerId, totalSpent]) => {
+        const customer = customers.find(c => c.id === customerId);
+        return {
+          name: customer?.name || 'Cliente Desconocido',
+          totalSpent,
+        };
+      });
+  }, [sales, customers]);
+
 
   return (
     <div>
@@ -39,13 +80,46 @@ const DashboardView: React.FC<DashboardViewProps> = ({ rawMaterials, fixedCosts,
                 <p className="text-3xl font-extrabold text-rose-600 mt-2">${totalFixedCosts.toFixed(2)}</p>
             </Card>
 
-            <Card className="md:col-span-3">
+            <Card className="md:col-span-2 lg:col-span-3">
                 <h3 className="font-bold text-slate-500">Ganancia Total (Ventas)</h3>
                 <p className="text-3xl font-extrabold text-emerald-600 mt-2">${totalProfit.toFixed(2)}</p>
                 <p className="text-sm text-slate-400">Sobre ${totalSalesValue.toFixed(2)} en ventas</p>
             </Card>
 
-            <Card className="md:col-span-3">
+            <div className="md:col-span-2 lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                    <h3 className="font-bold text-lg text-slate-700 mb-4">Top 5 Productos Vendidos</h3>
+                    {topSellingProducts.length > 0 ? (
+                        <ul className="space-y-3">
+                            {topSellingProducts.map((product, index) => (
+                                <li key={index} className="flex justify-between items-center text-sm">
+                                    <span className="font-medium text-slate-800 truncate pr-2" title={product.name}>{index + 1}. {product.name}</span>
+                                    <span className="font-bold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full flex-shrink-0">{product.quantitySold.toLocaleString()} und</span>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-center text-slate-500 py-4">No hay datos de ventas para mostrar.</p>
+                    )}
+                </Card>
+                <Card>
+                    <h3 className="font-bold text-lg text-slate-700 mb-4">Top 5 Clientes</h3>
+                    {topCustomers.length > 0 ? (
+                        <ul className="space-y-3">
+                            {topCustomers.map((customer, index) => (
+                                <li key={index} className="flex justify-between items-center text-sm">
+                                    <span className="font-medium text-slate-800 truncate pr-2" title={customer.name}>{index + 1}. {customer.name}</span>
+                                    <span className="font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full flex-shrink-0">${customer.totalSpent.toFixed(2)}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-center text-slate-500 py-4">No hay datos de clientes para mostrar.</p>
+                    )}
+                </Card>
+            </div>
+
+            <Card className="md:col-span-2 lg:col-span-3">
                  <div className="flex items-center mb-4">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-amber-500 mr-3 shrink-0" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />

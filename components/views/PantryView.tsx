@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { SellableProduct, WastedItemType, Unit } from '../../types';
 import Card from '../common/Card';
 import Modal from '../common/Modal';
+import Tooltip from '../common/Tooltip';
 
 // Waste Modal
 interface WasteModalProps {
@@ -45,8 +46,8 @@ const WasteModal: React.FC<WasteModalProps> = ({ isOpen, onClose, item, onSave }
                     <input type="text" value={reason} onChange={e => setReason(e.target.value)} placeholder="Ej: Producto dañado, caducado..." className="w-full p-2 bg-white border rounded" />
                 </div>
                 <div className="pt-4 flex justify-end gap-4">
-                    <button type="button" onClick={onClose} className="bg-slate-200 text-slate-800 px-6 py-2 rounded-lg hover:bg-slate-300">Cancelar</button>
-                    <button type="submit" className="bg-rose-600 text-white px-6 py-2 rounded-lg shadow hover:bg-rose-700">Confirmar Merma</button>
+                    <button type="button" onClick={onClose} className="bg-slate-200 text-slate-800 px-6 py-2 rounded-lg hover:bg-slate-300 transition-transform active:scale-95">Cancelar</button>
+                    <button type="submit" className="bg-rose-600 text-white px-6 py-2 rounded-lg shadow hover:bg-rose-700 transition-transform active:scale-95">Confirmar Merma</button>
                 </div>
             </form>
         </Modal>
@@ -95,8 +96,8 @@ const PackageModal: React.FC<PackageModalProps> = ({ isOpen, onClose, product, o
                     <input type="number" value={pvp} onChange={e => setPvp(e.target.value)} className="w-full p-2 border rounded" step="any" />
                 </div>
                  <div className="pt-4 flex justify-end gap-4">
-                    <button type="button" onClick={onClose} className="bg-slate-200 text-slate-800 px-6 py-2 rounded-lg hover:bg-slate-300">Cancelar</button>
-                    <button type="submit" className="bg-indigo-600 text-white px-6 py-2 rounded-lg shadow hover:bg-indigo-700">Crear Paquete</button>
+                    <button type="button" onClick={onClose} className="bg-slate-200 text-slate-800 px-6 py-2 rounded-lg hover:bg-slate-300 transition-transform active:scale-95">Cancelar</button>
+                    <button type="submit" className="bg-indigo-600 text-white px-6 py-2 rounded-lg shadow hover:bg-indigo-700 transition-transform active:scale-95">Crear Paquete</button>
                 </div>
             </form>
         </Modal>
@@ -152,8 +153,8 @@ const TransformModal: React.FC<TransformModalProps> = ({ isOpen, onClose, produc
                     <input type="number" value={newPvp} onChange={e => setNewPvp(e.target.value)} className="w-full p-2 border rounded" step="any" />
                 </div>
                  <div className="pt-4 flex justify-end gap-4">
-                    <button type="button" onClick={onClose} className="bg-slate-200 text-slate-800 px-6 py-2 rounded-lg hover:bg-slate-300">Cancelar</button>
-                    <button type="submit" className="bg-teal-600 text-white px-6 py-2 rounded-lg shadow hover:bg-teal-700">Confirmar Transformación</button>
+                    <button type="button" onClick={onClose} className="bg-slate-200 text-slate-800 px-6 py-2 rounded-lg hover:bg-slate-300 transition-transform active:scale-95">Cancelar</button>
+                    <button type="submit" className="bg-teal-600 text-white px-6 py-2 rounded-lg shadow hover:bg-teal-700 transition-transform active:scale-95">Confirmar Transformación</button>
                 </div>
             </form>
         </Modal>
@@ -172,6 +173,13 @@ const PantryView: React.FC<PantryViewProps> = ({ products, onPackage, onTransfor
     const [wastingProduct, setWastingProduct] = useState<SellableProduct | null>(null);
     const [packagingProduct, setPackagingProduct] = useState<SellableProduct | null>(null);
     const [transformingProduct, setTransformingProduct] = useState<SellableProduct | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const filteredProducts = useMemo(() => {
+        return products.filter(product =>
+            product.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [products, searchTerm]);
 
     return (
         <div>
@@ -180,35 +188,49 @@ const PantryView: React.FC<PantryViewProps> = ({ products, onPackage, onTransfor
             </div>
 
             <Card>
+                <div className="mb-4">
+                  <input
+                    type="text"
+                    placeholder="Buscar producto terminado..."
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className="w-full max-w-sm p-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
                 {products.length === 0 ? (
                 <div className="text-center py-12">
                     <h3 className="text-xl font-semibold text-slate-700">Tu despensa está vacía</h3>
                     <p className="text-slate-500 mt-2">Produce una receta para agregar productos aquí.</p>
                 </div>
+                ) : filteredProducts.length === 0 ? (
+                  <div className="text-center py-12">
+                    <h3 className="text-xl font-semibold text-slate-700">No se encontraron productos</h3>
+                    <p className="text-slate-500 mt-2">No hay productos que coincidan con "{searchTerm}".</p>
+                  </div>
                 ) : (
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">
                     <thead className="bg-slate-50">
                         <tr>
-                        <th className="p-3">Producto</th>
-                        <th className="p-3 text-right">Stock</th>
-                        <th className="p-3 text-right">Costo Unitario</th>
-                        <th className="p-3 text-right">PVP Unitario</th>
-                        <th className="p-3 text-center">Acciones</th>
+                        <th className="p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Producto</th>
+                        <th className="p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Stock</th>
+                        <th className="p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Costo Unitario</th>
+                        <th className="p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">PVP Unitario</th>
+                        <th className="p-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {products.map(p => (
+                        {filteredProducts.map(p => (
                         <tr key={p.id} className="border-b">
                             <td className="p-3 font-medium">{p.name}</td>
                             <td className="p-3 text-right font-semibold">{p.quantityInStock.toLocaleString()} und</td>
                             <td className="p-3 text-right text-rose-600">${p.cost.toFixed(2)}</td>
                             <td className="p-3 text-right font-bold text-indigo-600">${p.pvp.toFixed(2)}</td>
                             <td className="p-3 text-center">
-                            <div className="flex justify-center items-center gap-2">
-                                <button onClick={() => setPackagingProduct(p)} title="Empaquetar" className="text-slate-500 hover:text-indigo-600"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4z" /><path fillRule="evenodd" d="M3 8h14v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clipRule="evenodd" /></svg></button>
-                                <button onClick={() => setTransformingProduct(p)} title="Transformar" className="text-slate-500 hover:text-teal-600"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" /></svg></button>
-                                <button onClick={() => setWastingProduct(p)} title="Merma" className="text-slate-500 hover:text-rose-600"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg></button>
+                            <div className="flex justify-center items-center gap-1">
+                                <Tooltip text="Crear un paquete de este producto"><button onClick={() => setPackagingProduct(p)} className="p-1.5 rounded-full text-slate-500 hover:text-indigo-600 hover:bg-indigo-100 transition-all duration-150 transform hover:scale-110 active:scale-95"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4z" /><path fillRule="evenodd" d="M3 8h14v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clipRule="evenodd" /></svg></button></Tooltip>
+                                <Tooltip text="Transformar en un nuevo producto"><button onClick={() => setTransformingProduct(p)} className="p-1.5 rounded-full text-slate-500 hover:text-teal-600 hover:bg-teal-100 transition-all duration-150 transform hover:scale-110 active:scale-95"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" /></svg></button></Tooltip>
+                                <Tooltip text="Registrar merma"><button onClick={() => setWastingProduct(p)} className="p-1.5 rounded-full text-slate-500 hover:text-rose-600 hover:bg-rose-100 transition-all duration-150 transform hover:scale-110 active:scale-95"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg></button></Tooltip>
                             </div>
                             </td>
                         </tr>
@@ -222,7 +244,8 @@ const PantryView: React.FC<PantryViewProps> = ({ products, onPackage, onTransfor
             <WasteModal 
                 isOpen={!!wastingProduct}
                 onClose={() => setWastingProduct(null)}
-                item={wastingProduct ? { ...wastingProduct, unit: 'und' } : null}
+                // Fix: The WasteModal expects a 'stock' property. We map 'quantityInStock' from the SellableProduct to 'stock'.
+                item={wastingProduct ? { ...wastingProduct, stock: wastingProduct.quantityInStock, unit: 'und' } : null}
                 onSave={(itemId, qty, unit, reason) => onWaste(itemId, 'PRODUCT', qty, unit, reason)}
             />
             <PackageModal

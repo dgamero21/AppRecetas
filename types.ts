@@ -110,4 +110,4 @@ export interface UserData {
 }
 
 
-export type View = 'dashboard' | 'recipes' | 'rawMaterials' | 'fixedCosts' | 'sales' | 'pantry' | 'waste';
+export type View = 'dashboard' | 'inventory' | 'fixedCosts' | 'sales';

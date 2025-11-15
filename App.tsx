@@ -3,13 +3,10 @@ import { RawMaterial, FixedCost, Recipe, View, Sale, SellableProduct, Customer, 
 import { DEFAULT_USER_DATA } from './constants';
 import Header from './components/Header';
 import Nav from './components/Nav';
-import RawMaterialsView from './components/views/RawMaterialsView';
-import FixedCostsView from './components/views/FixedCostsView';
-import RecipesView from './components/views/RecipesView';
 import DashboardView from './components/views/DashboardView';
+import FixedCostsView from './components/views/FixedCostsView';
 import SalesView from './components/views/SalesView';
-import PantryView from './components/views/PantryView';
-import WasteView from './components/views/WasteView';
+import InventoryView from './components/views/InventoryView';
 import LoginView from './components/LoginView';
 
 import { auth, db } from './firebase';
@@ -46,30 +43,23 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  const handleRegister = async (email: string, password: string, name: string) => {
+  const handleLogin = async (username: string, password: string) => {
+    // Sanitize username: remove potential domain, trim whitespace, and convert to lowercase.
+    const sanitizedUsername = username.split('@')[0].toLowerCase().trim();
+    const email = `${sanitizedUsername}@recetaapp.local`;
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      const initialUserData = {
-        ...DEFAULT_USER_DATA,
-        userName: name // Add the user's name to their data
-      };
-      await setDoc(doc(db, "userData", user.uid), initialUserData);
-      setUserData(initialUserData);
-      setActiveUser(user);
-    } catch (error) {
-      console.error("Error creating user:", error);
-      alert("Error al registrar. Revisa la consola para más detalles.");
-    }
-  };
-
-  const handleLogin = async (email: string, password: string) => {
-    try {
+      console.log(`Attempting to sign in with constructed email: ${email}`);
       await signInWithEmailAndPassword(auth, email, password);
       // onAuthStateChanged will handle setting the user and data
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error signing in:", error);
-      alert("Email o contraseña incorrectos.");
+      console.error(`Failed login attempt for username: '${username}' (resolved to email: '${email}')`);
+      // Re-throw a user-friendly error to be caught by the LoginView component
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+          throw new Error("Usuario o contraseña incorrectos.");
+      } else {
+          throw new Error("Ocurrió un error inesperado al iniciar sesión.");
+      }
     }
   };
 
@@ -432,22 +422,32 @@ const App: React.FC = () => {
   }
   
   if (!activeUser || !userData) {
-    return <LoginView onLogin={handleLogin} onRegister={handleRegister} />;
+    return <LoginView onLogin={handleLogin} />;
   }
 
   const renderView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <DashboardView rawMaterials={userData.rawMaterials} fixedCosts={userData.fixedCosts} sales={userData.sales} sellableProducts={userData.sellableProducts} />;
-      case 'rawMaterials':
-        return <RawMaterialsView 
-                  rawMaterials={userData.rawMaterials} 
+        return <DashboardView rawMaterials={userData.rawMaterials} fixedCosts={userData.fixedCosts} sales={userData.sales} sellableProducts={userData.sellableProducts} customers={userData.customers} />;
+      case 'inventory':
+        return <InventoryView
+                  rawMaterials={userData.rawMaterials}
                   suppliers={userData.suppliers}
+                  recipes={userData.recipes}
+                  fixedCosts={userData.fixedCosts}
+                  sellableProducts={userData.sellableProducts}
+                  wasteRecords={userData.wasteRecords}
                   onSaveRawMaterial={handleSaveRawMaterial}
                   onDeleteRawMaterial={handleDeleteRawMaterial}
                   onPurchaseRawMaterial={handlePurchaseRawMaterial}
                   onWasteItem={handleWasteItem}
-               />;
+                  onSaveRecipe={handleSaveRecipe}
+                  onDeleteRecipe={handleDeleteRecipe}
+                  onProductionRun={handleProductionRun}
+                  onPackage={handlePackageProduct}
+                  onTransform={handleTransformProduct}
+                  onDeleteWasteRecord={handleDeleteWasteRecord}
+                />;
       case 'fixedCosts':
         return <FixedCostsView 
                   fixedCosts={userData.fixedCosts} 
@@ -464,29 +464,8 @@ const App: React.FC = () => {
                   onAddSale={handleAddSale} 
                   onDeleteSale={handleDeleteSale}
                />;
-      case 'pantry':
-        return <PantryView
-                  products={userData.sellableProducts}
-                  onPackage={handlePackageProduct}
-                  onTransform={handleTransformProduct}
-                  onWaste={handleWasteItem}
-               />;
-      case 'waste':
-        return <WasteView
-                  wasteRecords={userData.wasteRecords}
-                  onDeleteWasteRecord={handleDeleteWasteRecord}
-               />;
-      case 'recipes':
       default:
-        return <RecipesView 
-                  recipes={userData.recipes} 
-                  rawMaterials={userData.rawMaterials} 
-                  fixedCosts={userData.fixedCosts} 
-                  sellableProducts={userData.sellableProducts}
-                  onSaveRecipe={handleSaveRecipe}
-                  onDeleteRecipe={handleDeleteRecipe}
-                  onProductionRun={handleProductionRun}
-                />;
+        return <DashboardView rawMaterials={userData.rawMaterials} fixedCosts={userData.fixedCosts} sales={userData.sales} sellableProducts={userData.sellableProducts} customers={userData.customers} />;
     }
   };
 
