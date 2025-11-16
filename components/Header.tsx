@@ -4,47 +4,54 @@ import Tooltip from './common/Tooltip';
 interface HeaderProps {
   userName: string | null;
   onLogout: () => void;
+  onMenuClick: () => void;
 }
 
 const GastronomIAIcon = () => (
-    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-2 shrink-0">
-      <path d="M19.68 9.32999C19.68 9.32999 22 10.15 22 12.41C22 14.67 19.55 15.52 19.55 15.52" stroke="#4F46E5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M4.4502 15.52C4.4502 15.52 2.0002 14.67 2.0002 12.41C2.0002 10.15 4.3202 9.32999 4.3202 9.32999" stroke="#4F46E5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M16 4.43C16 4.43 16.56 2 12 2C7.44 2 8 4.43 8 4.43" stroke="#4F46E5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M12 12.41V22" stroke="#4338CA" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M18.81 12.41C18.81 12.41 19.68 12.41 20.26 11.83C21.4 10.69 20.84 8.79999 19.1 8.21999C17.36 7.63999 16 8.77999 16 10.15C16 11.52 17.36 12.41 18.81 12.41Z" fill="#A5B4FC" stroke="#4F46E5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M5.19001 12.41C5.19001 12.41 4.32001 12.41 3.74001 11.83C2.60001 10.69 3.16001 8.79999 4.90001 8.21999C6.64001 7.63999 8.00001 8.77999 8.00001 10.15C8.00001 11.52 6.64001 12.41 5.19001 12.41Z" fill="#A5B4FC" stroke="#4F46E5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M12 14.07C14.21 14.07 16 12.28 16 10.07C16 7.85999 14.21 6.06999 12 6.06999C9.79 6.06999 8 7.85999 8 10.07C8 12.28 9.79 14.07 12 14.07Z" fill="#818CF8" stroke="#4338CA" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-2 text-amber-600 animate-chef-jump">
+        <path d="M6 18H18V14C18 13.4477 17.5523 13 17 13H7C6.44772 13 6 13.4477 6 14V18Z" stroke="#4B5563" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M6.5 13C4.5 13 3.5 11 4 9C4.5 7 6.5 6 8.5 6C10.5 6 11.5 4 12.5 3C13.5 4 14.5 6 16.5 6C18.5 6 20.5 7 21 9C21.5 11 20.5 13 18.5 13H6.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 
-const Header: React.FC<HeaderProps> = ({ userName, onLogout }) => {
-  // Extract username from email for display purposes
+const Header: React.FC<HeaderProps> = ({ userName, onLogout, onMenuClick }) => {
   const displayName = userName ? userName.split('@')[0] : '';
 
   return (
-    <header className="bg-white shadow-md">
-      <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-        <div>
+    <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-20">
+      <div className="max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+        <div className="flex items-center">
+            <Tooltip text="Abrir menú">
+                <button 
+                    onClick={onMenuClick}
+                    className="p-2 rounded-full hover:bg-gray-100 mr-2 lg:hidden"
+                    aria-label="Abrir menú de navegación"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+            </Tooltip>
           <div className="flex items-center">
-            <GastronomIAIcon />
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-              Gastronom<span className="text-indigo-600">IA</span>
-            </h1>
+              <GastronomIAIcon />
+              <h1 className="text-2xl font-extrabold tracking-tight text-gray-800">
+              Gastronom<span className="text-amber-600">IA</span>
+              </h1>
           </div>
-          <p className="text-slate-500 mt-1">Tu asistente IA para la gestión de costos gastronómicos.</p>
         </div>
         {userName && (
           <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-slate-600" title={userName}>
+            <span className="text-sm font-semibold text-gray-700 hidden md:inline" title={userName}>
               {displayName}
             </span>
-            <Tooltip text="Cerrar sesión de forma segura">
+            <Tooltip text="Cerrar sesión">
               <button
                 onClick={onLogout}
-                className="bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-slate-300 transition-all duration-150 ease-in-out active:scale-95"
+                className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 p-2 rounded-full transition-colors duration-150"
               >
-                Cerrar Sesión
+                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
               </button>
             </Tooltip>
           </div>

@@ -6,6 +6,13 @@ interface LoginViewProps {
   onLogin: (username: string, password: string) => Promise<void>;
 }
 
+const GastronomIAIcon = () => (
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mx-auto mb-2 text-amber-600 animate-chef-jump">
+        <path d="M6 18H18V14C18 13.4477 17.5523 13 17 13H7C6.44772 13 6 13.4477 6 14V18Z" stroke="#4B5563" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M6.5 13C4.5 13 3.5 11 4 9C4.5 7 6.5 6 8.5 6C10.5 6 11.5 4 12.5 3C13.5 4 14.5 6 16.5 6C18.5 6 20.5 7 21 9C21.5 11 20.5 13 18.5 13H6.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+);
+
 const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -45,59 +52,59 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
-      <div className="w-full max-w-md mx-auto">
-        <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold tracking-tight text-slate-900">
-                Gastronom<span className="text-indigo-600">IA</span>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="w-full max-w-sm mx-auto">
+        <div className="text-center mb-6">
+            <GastronomIAIcon />
+            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-gray-800">
+                Gastronom<span className="text-amber-600">IA</span>
             </h1>
-            <p className="text-slate-500 mt-2">
-              Inicia sesión para acceder a tus datos.
+            <p className="text-sm text-gray-500 mt-2">
+              Inicia sesión para gestionar tu negocio.
             </p>
         </div>
 
         <Card>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Usuario</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
               <input
                 type="text"
                 value={username}
                 onChange={handleUsernameChange}
-                placeholder="nombre.usuario"
-                className="w-full p-2 bg-white border rounded text-slate-900"
+                placeholder="tu.usuario"
+                className="w-full p-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-amber-600 focus:border-amber-600 text-gray-900"
                 required
                 autoCapitalize="none"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Contraseña</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
               <div className="relative">
                 <input
                     type={isPasswordVisible ? 'text' : 'password'}
                     value={password}
                     onChange={handlePasswordChange}
                     placeholder="••••••••"
-                    className="w-full p-2 bg-white border rounded text-slate-900"
+                    className="w-full p-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-amber-600 focus:border-amber-600 text-gray-900"
                     required
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                    <Tooltip text={isPasswordVisible ? 'Ocultar contraseña' : 'Mostrar contraseña'} position="top">
+                    <Tooltip text={isPasswordVisible ? 'Ocultar' : 'Mostrar'} position="top">
                         <button 
                             type="button" 
                             onClick={togglePasswordVisibility}
-                            className="p-1 rounded-full hover:bg-slate-200 transition-colors"
+                            className="p-1 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
                             aria-label={isPasswordVisible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                         >
                             {isPasswordVisible ? (
-                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-500" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clipRule="evenodd" />
-                                <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.742L2.303 6.546A10.048 10.048 0 01.458 10c1.274 4.057 5.022 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
+                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a9.97 9.97 0 01-1.563 3.029m0 0l-2.122 2.122" />
                               </svg>
                             ) : (
-                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-500" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.022 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.522 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.022 7-9.542 7-4.478 0-8.268-2.943-9.542 7z" />
                               </svg>
                             )}
                         </button>
@@ -114,7 +121,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition-all duration-150 font-semibold disabled:bg-indigo-400 disabled:cursor-not-allowed flex items-center justify-center active:scale-[0.98]"
+                className="w-full bg-amber-600 text-white px-4 py-2.5 rounded-lg shadow-sm hover:bg-amber-700 transition-all duration-150 font-semibold disabled:bg-amber-400 disabled:cursor-not-allowed flex items-center justify-center active:scale-[0.98]"
               >
                 {isLoading && (
                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -127,8 +134,8 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
             </div>
           </form>
         </Card>
-         <div className="mt-6 text-center text-xs text-slate-500">
-            <p>El administrador es el único que puede crear nuevas cuentas.</p>
+         <div className="mt-6 text-center text-xs text-gray-500">
+            <p>Solo el administrador puede crear nuevas cuentas.</p>
         </div>
       </div>
     </div>

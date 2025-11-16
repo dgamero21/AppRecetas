@@ -10,11 +10,13 @@ export interface PurchaseRecord {
 export interface RawMaterial {
   id: string;
   name: string;
-  purchasePrice: number;
-  stock: number;
+  purchasePrice: number; // Average price per CONSUMPTION unit
+  stock: number; // Stock is always in CONSUMPTION unit
   minStock: number;
   supplier: string;
-  unit: Unit;
+  consumptionUnit: Unit;
+  // Optional: for items bought in one unit and consumed in another
+  purchaseUnitConversion: number | null; // How many consumption units per purchase unit
   purchaseHistory: PurchaseRecord[];
 }
 
@@ -36,6 +38,7 @@ export interface Recipe {
   productionYield: number; // How many units this recipe produces
   cost: number; // Production cost per unit
   pvp: number; // Price per unit
+  preparationNotes: string | null;
 }
 
 export type ProductType = 'SINGLE' | 'PACKAGE' | 'TRANSFORMED';
@@ -49,14 +52,14 @@ export interface SellableProduct {
   pvp: number; // Price per unit
   
   // Link to original recipe if it's a direct production
-  recipeId?: string; 
+  recipeId: string | null; 
 
   // For packages
-  sourceProductId?: string;
-  packSize?: number;
+  sourceProductId: string | null;
+  packSize: number | null;
 
   // For transformations (uses sourceProductId)
-  transformationNote?: string;
+  transformationNote: string | null;
 }
 
 export type WastedItemType = 'RAW_MATERIAL' | 'PRODUCT';
@@ -67,9 +70,25 @@ export interface WasteRecord {
   itemName: string; 
   itemType: WastedItemType;
   quantity: number;
-  unit?: Unit | 'und'; 
+  unit: Unit | 'und'; 
   date: string;
   reason: string;
+}
+
+export interface ShoppingListItem {
+  rawMaterialId: string | undefined;
+  name: string;
+  quantity: number;
+  unit: Unit | 'und';
+  supplier: string;
+}
+
+export interface ShoppingList {
+  id: string;
+  name: string;
+  type: string;
+  items: ShoppingListItem[];
+  createdAt: string;
 }
 
 
@@ -107,7 +126,8 @@ export interface UserData {
   customers: Customer[];
   suppliers: string[];
   wasteRecords: WasteRecord[];
+  shoppingLists: ShoppingList[];
 }
 
 
-export type View = 'dashboard' | 'inventory' | 'fixedCosts' | 'sales';
+export type View = 'home' | 'dashboard' | 'inventory' | 'fixedCosts' | 'sales' | 'help';

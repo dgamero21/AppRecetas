@@ -11,4 +11,5 @@ export const DEFAULT_USER_DATA: UserData = {
   customers: [],
   suppliers: ['Proveedor General'],
   wasteRecords: [],
+  shoppingLists: [],
 };

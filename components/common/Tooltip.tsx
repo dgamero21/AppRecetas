@@ -18,7 +18,7 @@ const Tooltip: React.FC<TooltipProps> = ({ children, text, position = 'top' }) =
       <div
         role="tooltip"
         className={`absolute ${positionClasses[position]} w-max max-w-xs scale-0 group-hover:scale-100 transition-all origin-bottom duration-200
-                   bg-slate-800 text-white text-xs font-semibold rounded-md shadow-lg px-2 py-1 pointer-events-none z-50 whitespace-nowrap`}
+                   bg-gray-800 text-white text-xs font-semibold rounded-md shadow-lg px-2 py-1 pointer-events-none z-50 whitespace-nowrap`}
       >
         {text}
       </div>
