@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Tooltip from './common/Tooltip';
 
@@ -24,7 +25,7 @@ const Header: React.FC<HeaderProps> = ({ userName, onLogout, onMenuClick }) => {
             <Tooltip text="Abrir menú">
                 <button 
                     onClick={onMenuClick}
-                    className="p-2 rounded-full hover:bg-gray-100 mr-2 lg:hidden"
+                    className="p-2 rounded-full hover:bg-gray-100 mr-2"
                     aria-label="Abrir menú de navegación"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

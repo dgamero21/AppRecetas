@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { View } from '../types';
 
@@ -46,12 +47,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, setCurr
       {/* Overlay */}
       <div 
         onClick={onClose}
-        className={`fixed inset-0 bg-black bg-opacity-50 z-30 transition-opacity duration-300 lg:hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 bg-black bg-opacity-50 z-30 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       />
       {/* Sidebar */}
       <aside 
         className={`fixed top-0 left-0 z-40 w-64 h-screen transition-transform duration-300 ease-in-out bg-white shadow-lg border-r border-gray-200 
-                   ${isOpen ? 'transform-none' : '-translate-x-full'} lg:translate-x-0`}
+                   ${isOpen ? 'transform-none' : '-translate-x-full'}`}
         aria-label="Sidebar"
       >
         <div className="h-full px-3 py-4 overflow-y-auto">
