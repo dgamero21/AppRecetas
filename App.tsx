@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { RawMaterial, FixedCost, Recipe, View, Sale, SellableProduct, Customer, WasteRecord, WastedItemType, ProductType, Unit, PurchaseRecord, UserData, ShoppingList } from './types';
 import { DEFAULT_USER_DATA } from './constants';
@@ -781,7 +780,15 @@ const App: React.FC = () => {
       case 'home':
         return <HomeView setCurrentView={handleSetView} />;
       case 'dashboard':
-        return <DashboardView rawMaterials={userData.rawMaterials} fixedCosts={userData.fixedCosts} sales={userData.sales} sellableProducts={userData.sellableProducts} customers={userData.customers} />;
+        return <DashboardView 
+                  rawMaterials={userData.rawMaterials} 
+                  fixedCosts={userData.fixedCosts} 
+                  sales={userData.sales} 
+                  sellableProducts={userData.sellableProducts} 
+                  customers={userData.customers} 
+                  wasteRecords={userData.wasteRecords}
+                  recipes={userData.recipes}
+                />;
       case 'inventory':
         return <InventoryView
                   rawMaterials={userData.rawMaterials}
